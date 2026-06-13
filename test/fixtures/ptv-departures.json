@@ -1,0 +1,18 @@
+{
+  "departures": [
+    { "stop_id": 2070, "route_id": 1, "run_ref": "1-aaa", "direction_id": 10, "scheduled_departure_utc": "2026-06-13T03:05:00Z", "estimated_departure_utc": "2026-06-13T03:04:00Z" },
+    { "stop_id": 2070, "route_id": 2, "run_ref": "2-bbb", "direction_id": 20, "scheduled_departure_utc": "2026-06-13T03:11:00Z", "estimated_departure_utc": null },
+    { "stop_id": 2070, "route_id": 1, "run_ref": "1-ccc", "direction_id": 10, "scheduled_departure_utc": "2026-06-13T03:03:00Z", "estimated_departure_utc": "2026-06-13T03:02:00Z" }
+  ],
+  "stops": { "2070": { "stop_id": 2070, "stop_name": "Glenferrie Rd/Dandenong Rd" } },
+  "routes": {
+    "1": { "route_type": 1, "route_id": 1, "route_name": "East Brighton - Moonee Ponds", "route_number": "3" },
+    "2": { "route_type": 1, "route_id": 2, "route_name": "Melbourne University - Carnegie", "route_number": "16" }
+  },
+  "directions": {
+    "10": { "direction_id": 10, "direction_name": "Moonee Ponds", "route_id": 1 },
+    "20": { "direction_id": 20, "direction_name": "Melbourne University", "route_id": 2 }
+  },
+  "runs": { "1-ccc": { "run_ref": "1-ccc", "destination_name": "Moonee Ponds" } },
+  "status": { "version": "3.0", "health": 1 }
+}

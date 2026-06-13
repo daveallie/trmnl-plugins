@@ -1,0 +1,21 @@
+{
+  "name": "trmnl-plugins",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Node server hosting TRMNL private (polling) plugins",
+  "scripts": {
+    "start": "node src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit && node --test"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "liquidjs": "^10.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.7.0"
+  }
+}

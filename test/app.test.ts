@@ -1,0 +1,79 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import type { AddressInfo } from "node:net";
+import type { Server } from "node:http";
+import { createApp, type AppDeps } from "../src/index.ts";
+import type { PtvClient } from "../src/ptv/client.ts";
+import type { PtvDeparturesResponse } from "../src/ptv/types.ts";
+import type { Config } from "../src/config.ts";
+
+const fixture: PtvDeparturesResponse = JSON.parse(
+  await readFile(new URL("./fixtures/ptv-departures.json", import.meta.url), "utf8"),
+);
+const NOW = new Date("2026-06-13T03:00:00Z");
+const config: Config = { ptvUserId: "1", ptvApiKey: "k", serverSecret: "s3cret", port: 0 };
+
+function startApp(deps: AppDeps): Promise<{ server: Server; base: string }> {
+  const app = createApp(config, deps);
+  return new Promise((resolve) => {
+    const server = app.listen(0, () => {
+      const { port } = server.address() as AddressInfo;
+      resolve({ server, base: `http://127.0.0.1:${port}` });
+    });
+  });
+}
+
+test("GET /plugins/tram requires a valid Bearer token", async () => {
+  const client: PtvClient = { getDepartures: async () => fixture };
+  const { server, base } = await startApp({ client, now: () => NOW });
+  try {
+    const res = await fetch(`${base}/plugins/tram`);
+    assert.equal(res.status, 401);
+
+    const ok = await fetch(`${base}/plugins/tram`, {
+      headers: { Authorization: "Bearer s3cret" },
+    });
+    assert.equal(ok.status, 200);
+    const body = (await ok.json()) as { stop_name: string; departures: { route: string }[] };
+    assert.equal(body.stop_name, "Glenferrie Rd/Dandenong Rd");
+    assert.equal(body.departures.length, 3);
+    assert.equal(body.departures[0]!.route, "3");
+  } finally {
+    server.close();
+  }
+});
+
+test("GET /plugins/tram returns 502 when PTV fails", async () => {
+  const client: PtvClient = {
+    getDepartures: async () => {
+      throw new Error("PTV API returned 503");
+    },
+  };
+  const { server, base } = await startApp({ client, now: () => NOW });
+  try {
+    const res = await fetch(`${base}/plugins/tram`, {
+      headers: { Authorization: "Bearer s3cret" },
+    });
+    assert.equal(res.status, 502);
+  } finally {
+    server.close();
+  }
+});
+
+test("GET /preview/tram renders HTML from the template", async () => {
+  const client: PtvClient = { getDepartures: async () => fixture };
+  const { server, base } = await startApp({ client, now: () => NOW });
+  try {
+    const res = await fetch(`${base}/preview/tram`);
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get("content-type") ?? "", /text\/html/);
+    const html = await res.text();
+    assert.match(html, /class="screen"/);
+    assert.match(html, /Route 3/);
+    assert.match(html, /Moonee Ponds/);
+    assert.match(html, /trmnl\.com\/css/);
+  } finally {
+    server.close();
+  }
+});

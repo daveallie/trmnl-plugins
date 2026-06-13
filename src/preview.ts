@@ -1,0 +1,41 @@
+import { Liquid } from "liquidjs";
+import { readFile } from "node:fs/promises";
+import type { RequestHandler } from "express";
+
+const engine = new Liquid();
+const TEMPLATE_URL = new URL("../template.liquid", import.meta.url);
+
+export interface PreviewOptions {
+  loadData: (useMock: boolean) => Promise<object>;
+}
+
+function renderPage(inner: string): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TRMNL preview</title>
+  <link rel="stylesheet" href="https://trmnl.com/css/latest/plugins.css" />
+  <style>
+    body { margin: 0; background: #777; display: grid; place-items: center; min-height: 100vh; }
+    .screen { width: 800px; height: 480px; background: #fff; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div class="screen">${inner}</div>
+</body>
+</html>`;
+}
+
+export function createPreviewHandler({ loadData }: PreviewOptions): RequestHandler {
+  return async (req, res) => {
+    try {
+      const data = await loadData(Boolean(req.query.mock));
+      const template = await readFile(TEMPLATE_URL, "utf8");
+      const inner = await engine.parseAndRender(template, data);
+      res.type("html").send(renderPage(inner));
+    } catch (err) {
+      res.status(502).type("html").send(`<pre>Preview error: ${(err as Error).message}</pre>`);
+    }
+  };
+}

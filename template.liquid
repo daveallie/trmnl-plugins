@@ -1,0 +1,25 @@
+<div class="view view--full">
+  <div class="layout">
+    <div class="columns">
+      <div class="column">
+        {% for d in departures %}
+          <div class="item">
+            <div class="content">
+              <span class="title">Route {{ d.route }} &middot; {{ d.destination }}</span>
+              <span class="description">
+                {{ d.time }} &middot; {{ d.minutes }} min{% if d.realtime %} &middot; live{% endif %}
+              </span>
+            </div>
+          </div>
+        {% endfor %}
+        {% if departures.size == 0 %}
+          <div class="item"><div class="content"><span class="title">No upcoming trams</span></div></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="title_bar">
+    <span class="title">Tram Times</span>
+    <span class="instance">{{ stop_name }} &middot; updated {{ updated_at }}</span>
+  </div>
+</div>
