@@ -8,7 +8,6 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY src ./src
-COPY template.liquid ./
 
 EXPOSE 8080
 CMD ["node", "src/index.ts"]

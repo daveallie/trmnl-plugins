@@ -27,7 +27,8 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
   // Authenticate every route, including the preview (which calls the PTV API).
   app.use(createAuthMiddleware(config.serverSecret));
 
-  const plugins = [createTramPlugin({ client, now })];
+  const tram = createTramPlugin({ client, now });
+  const plugins = [tram];
   for (const plugin of plugins) {
     app.get(`/plugins${plugin.route}`, plugin.handler);
   }
@@ -36,6 +37,7 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
   app.get(
     "/preview/tram/:stopId",
     createPreviewHandler({
+      templateUrl: tram.templateUrl,
       loadData: async (req): Promise<object> => {
         if (req.query.mock) {
           // Anchor "now" to the bundled fixture's reference time so the mock

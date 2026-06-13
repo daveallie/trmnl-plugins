@@ -87,7 +87,7 @@ pipe the curl output to a file and open that.
 1. Create a private plugin in TRMNL, strategy **Polling**, method **GET**.
 2. Polling URL: `https://<your-host>/plugins/tram/<stopId>` (e.g. `.../plugins/tram/2070`)
 3. Add a header: `Authorization = Bearer <SERVER_SECRET>`
-4. Paste the contents of `template.liquid` into the plugin's markup.
+4. Paste the contents of `src/plugins/tram.liquid` into the plugin's markup.
 
 The returned JSON keys (`stop_name`, `updated_at`, `departures`) are available
 directly as Liquid variables.
@@ -103,9 +103,9 @@ src/
   ptv/client.ts     # PTV departures client (injectable fetch)
   ptv/types.ts      # PTV API response types
   plugins/tram.ts   # tram shaping + plugin handler
-  preview.ts        # /preview/<name> HTML renderer
+  plugins/tram.liquid  # tram's TRMNL markup (full layout) — used by /preview and pasted into TRMNL
+  preview.ts        # /preview/<name> HTML renderer (takes the plugin's templateUrl)
 test/               # node:test suites + fixtures
-template.liquid     # sample TRMNL markup (full layout)
 ```
 
 Adding a plugin: create a module under `src/plugins/` exporting `{ name, handler }`,

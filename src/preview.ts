@@ -3,9 +3,10 @@ import { readFile } from "node:fs/promises";
 import type { Request, RequestHandler } from "express";
 
 const engine = new Liquid();
-const TEMPLATE_URL = new URL("../template.liquid", import.meta.url);
 
 export interface PreviewOptions {
+  // The plugin's Liquid template to render.
+  templateUrl: URL;
   loadData: (req: Request) => Promise<object>;
 }
 
@@ -30,11 +31,11 @@ function renderPage(inner: string): string {
 </html>`;
 }
 
-export function createPreviewHandler({ loadData }: PreviewOptions): RequestHandler {
+export function createPreviewHandler({ templateUrl, loadData }: PreviewOptions): RequestHandler {
   return async (req, res) => {
     try {
       const data = await loadData(req);
-      const template = await readFile(TEMPLATE_URL, "utf8");
+      const template = await readFile(templateUrl, "utf8");
       const inner = await engine.parseAndRender(template, data);
       res.type("html").send(renderPage(inner));
     } catch (err) {

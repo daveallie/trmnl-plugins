@@ -6,7 +6,7 @@
         <span class="label">Nothing scheduled right now</span>
       </div>
     {% else %}
-      <div style="display:flex; flex-direction:column; height:100%;">
+      <div style="display:flex; flex-direction:column; height:100%; width: 100%;">
         {% for d in departures %}
           <div style="flex:1 1 0; display:flex; align-items:center; padding:0 6px;{% unless forloop.last %} border-bottom:2px dashed #555;{% endunless %}">
             {% comment %} Route number badge {% endcomment %}

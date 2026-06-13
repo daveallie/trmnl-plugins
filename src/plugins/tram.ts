@@ -23,6 +23,8 @@ export interface Plugin {
   name: string;
   route: string;
   handler: RequestHandler;
+  // Liquid template for this plugin's TRMNL view (used by the preview route).
+  templateUrl: URL;
 }
 
 export interface TramPluginOptions {
@@ -107,6 +109,7 @@ export function createTramPlugin({ client, now = () => new Date() }: TramPluginO
   return {
     name: "tram",
     route: "/tram/:stopId",
+    templateUrl: new URL("./tram.liquid", import.meta.url),
     handler: async (req, res) => {
       const stopId = parseStopId(req.params.stopId);
       if (stopId === null) {

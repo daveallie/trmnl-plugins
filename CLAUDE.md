@@ -50,10 +50,14 @@ src/
   ptv/client.ts     # createPtvClient({userId, apiKey, fetchImpl}): getDepartures()
   ptv/types.ts      # PTV API response types
   plugins/tram.ts   # shapeDepartures() (pure), fetchTramData(), parseStopId(), createTramPlugin()
-  preview.ts        # createPreviewHandler({loadData}): renders template.liquid to HTML
+  plugins/tram.liquid  # tram's TRMNL markup (full layout); declared by the plugin as templateUrl
+  preview.ts        # createPreviewHandler({templateUrl, loadData}): renders a plugin's template to HTML
 test/               # node:test suites (*.test.ts) + fixtures/ptv-departures.json
-template.liquid     # sample TRMNL markup (full layout) — also used by /preview
 ```
+
+Templates are per-plugin: each plugin declares its own `templateUrl` (a `.liquid`
+file co-located in `src/plugins/`), and the preview handler renders whichever
+template it's given — there is no single global template.
 
 ## Conventions and patterns
 
@@ -69,9 +73,10 @@ template.liquid     # sample TRMNL markup (full layout) — also used by /previe
 - **Error contract:** bad/missing Bearer token → `401`; PTV upstream failure → `502`.
   TRMNL keeps the last good render on a failed poll, so 502 is the right signal.
 - **Adding a plugin:** create `src/plugins/<name>.ts` exporting
-  `{ name, route, handler }` (handler is an Express `RequestHandler`; `route` is the
-  sub-path under `/plugins`, e.g. `/tram/:stopId`), then add it to the `plugins`
-  array in `src/index.ts`. It's mounted at `/plugins${route}` with auth applied.
+  `{ name, route, handler, templateUrl }` (handler is an Express `RequestHandler`;
+  `route` is the sub-path under `/plugins`, e.g. `/tram/:stopId`; `templateUrl` is a
+  `new URL("./<name>.liquid", import.meta.url)` to its co-located template), then add
+  it to the `plugins` array in `src/index.ts`. It's mounted at `/plugins${route}`.
 - **Routes:** `/plugins/tram/:stopId` (JSON), `/preview/tram/:stopId` (local-dev
   HTML; `?mock=1` renders the fixture and ignores the stop id). Both are
   authenticated (auth is global). Invalid stop id → `400`; missing → `404`. No
