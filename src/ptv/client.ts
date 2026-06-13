@@ -36,7 +36,7 @@ export function createPtvClient({ userId, apiKey, fetchImpl = fetch }: PtvClient
   }: DeparturesQuery): Promise<PtvDeparturesResponse> {
     const path =
       `/v3/departures/route_type/${routeType}/stop/${stopId}` +
-      `?max_results=${maxResults}&expand=Route&expand=Direction&expand=Run&devid=${userId}`;
+      `?max_results=${maxResults}&expand=Route&expand=Direction&expand=Run&expand=Stop&devid=${userId}`;
     const signature = signRequest(apiKey, path);
     const res = await fetchImpl(`${PTV_BASE}${path}&signature=${signature}`);
     if (!res.ok) {

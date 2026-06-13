@@ -25,7 +25,8 @@ test("getDepartures builds a signed URL with devid, expands and signature", asyn
   assert.match(captured.url, /expand=Route/);
   assert.match(captured.url, /expand=Direction/);
   assert.match(captured.url, /expand=Run/);
-  assert.match(captured.url, /signature=263422EE737D0B3614B02519ECCEEBBD1BED84B9$/);
+  assert.match(captured.url, /expand=Stop/);
+  assert.match(captured.url, /signature=98AC86DD23F417DB1DC3705621B98C81A8BFB8D5$/);
   assert.deepEqual(data, { departures: [] });
 });
 
