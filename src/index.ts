@@ -6,9 +6,8 @@ import { createPtvClient, type PtvClient } from "./ptv/client.ts";
 import {
   createTramPlugin,
   shapeDepartures,
-  ROUTE_TYPE_TRAM,
-  STOP_ID,
-  MAX_RESULTS,
+  fetchTramData,
+  parseStopId,
 } from "./plugins/tram.ts";
 import { createPreviewHandler } from "./preview.ts";
 
@@ -28,21 +27,25 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
 
   const plugins = [createTramPlugin({ client, now })];
   for (const plugin of plugins) {
-    app.get(`/plugins/${plugin.name}`, auth, plugin.handler);
+    app.get(`/plugins${plugin.route}`, auth, plugin.handler);
   }
 
   const fixtureUrl = new URL("../test/fixtures/ptv-departures.json", import.meta.url);
-  const loadTramData = async (useMock: boolean): Promise<object> => {
-    const raw = useMock
-      ? JSON.parse(await readFile(fixtureUrl, "utf8"))
-      : await client.getDepartures({
-          routeType: ROUTE_TYPE_TRAM,
-          stopId: STOP_ID,
-          maxResults: MAX_RESULTS,
-        });
-    return shapeDepartures(raw, now());
-  };
-  app.get("/preview/tram", createPreviewHandler({ loadData: loadTramData }));
+  app.get(
+    "/preview/tram/:stopId",
+    createPreviewHandler({
+      loadData: async (req): Promise<object> => {
+        if (req.query.mock) {
+          return shapeDepartures(JSON.parse(await readFile(fixtureUrl, "utf8")), now());
+        }
+        const stopId = parseStopId(req.params.stopId);
+        if (stopId === null) {
+          throw new Error("invalid stop id");
+        }
+        return fetchTramData(client, stopId, now());
+      },
+    }),
+  );
 
   return app;
 }

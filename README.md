@@ -10,10 +10,12 @@ strips types at runtime, so the `.ts` sources execute directly
 
 ## Plugins
 
-### Tram times (`/plugins/tram`)
+### Tram times (`/plugins/tram/:stopId`)
 
-Upcoming tram departures from PTV stop **2070** (route type 1, trams). Returns up
-to 5 departures, soonest first, using real-time estimates when available.
+Upcoming tram departures from a PTV stop (route type 1, trams). The stop id is a
+required path segment, e.g. `/plugins/tram/2070`. Returns up to 5 departures,
+soonest first, using real-time estimates when available. A non-numeric stop id
+returns `400`; omitting it (`/plugins/tram`) is `404`.
 
 Response shape:
 
@@ -62,9 +64,10 @@ npm run typecheck    # tsc --noEmit only
 
 ## Preview without TRMNL
 
-Open `http://localhost:8080/preview/tram` to render the Liquid template with live
-PTV data, or `http://localhost:8080/preview/tram?mock=1` to render from the
-bundled fixture (no network / no PTV credentials needed).
+Open `http://localhost:8080/preview/tram/2070` to render the Liquid template with
+live PTV data for a stop, or `http://localhost:8080/preview/tram/2070?mock=1` to
+render from the bundled fixture (no network / no PTV credentials needed; the stop
+id is ignored in mock mode).
 
 > The `?mock=1` fixture lives under `test/`, which is excluded from the Docker
 > image — mock preview is a local-development affordance. The live preview works
@@ -73,7 +76,7 @@ bundled fixture (no network / no PTV credentials needed).
 ## Configure the TRMNL private plugin
 
 1. Create a private plugin in TRMNL, strategy **Polling**, method **GET**.
-2. Polling URL: `https://<your-host>/plugins/tram`
+2. Polling URL: `https://<your-host>/plugins/tram/<stopId>` (e.g. `.../plugins/tram/2070`)
 3. Add a header: `Authorization = Bearer <SERVER_SECRET>`
 4. Paste the contents of `template.liquid` into the plugin's markup.
 

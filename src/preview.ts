@@ -1,12 +1,12 @@
 import { Liquid } from "liquidjs";
 import { readFile } from "node:fs/promises";
-import type { RequestHandler } from "express";
+import type { Request, RequestHandler } from "express";
 
 const engine = new Liquid();
 const TEMPLATE_URL = new URL("../template.liquid", import.meta.url);
 
 export interface PreviewOptions {
-  loadData: (useMock: boolean) => Promise<object>;
+  loadData: (req: Request) => Promise<object>;
 }
 
 function renderPage(inner: string): string {
@@ -30,7 +30,7 @@ function renderPage(inner: string): string {
 export function createPreviewHandler({ loadData }: PreviewOptions): RequestHandler {
   return async (req, res) => {
     try {
-      const data = await loadData(Boolean(req.query.mock));
+      const data = await loadData(req);
       const template = await readFile(TEMPLATE_URL, "utf8");
       const inner = await engine.parseAndRender(template, data);
       res.type("html").send(renderPage(inner));

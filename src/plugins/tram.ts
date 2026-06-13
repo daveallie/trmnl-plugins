@@ -3,7 +3,6 @@ import type { PtvClient } from "../ptv/client.ts";
 import type { PtvDeparturesResponse } from "../ptv/types.ts";
 
 export const ROUTE_TYPE_TRAM = 1;
-export const STOP_ID = 2070;
 export const MAX_RESULTS = 5;
 
 export interface ShapedDeparture {
@@ -22,6 +21,7 @@ export interface TramData {
 
 export interface Plugin {
   name: string;
+  route: string;
   handler: RequestHandler;
 }
 
@@ -39,6 +39,14 @@ const timeFormatter = new Intl.DateTimeFormat("en-AU", {
 
 export function formatMelbourneTime(date: Date): string {
   return timeFormatter.format(date).toLowerCase();
+}
+
+// PTV stop ids are positive integers. Returns null for anything else.
+export function parseStopId(raw: string | undefined): number | null {
+  if (raw === undefined || !/^\d+$/.test(raw)) {
+    return null;
+  }
+  return Number(raw);
 }
 
 export function shapeDepartures(
@@ -81,17 +89,32 @@ export function shapeDepartures(
   };
 }
 
+// Fetch and shape departures for a stop. Shared by the plugin route and the preview.
+export async function fetchTramData(
+  client: PtvClient,
+  stopId: number,
+  now: Date,
+): Promise<TramData> {
+  const data = await client.getDepartures({
+    routeType: ROUTE_TYPE_TRAM,
+    stopId,
+    maxResults: MAX_RESULTS,
+  });
+  return shapeDepartures(data, now);
+}
+
 export function createTramPlugin({ client, now = () => new Date() }: TramPluginOptions): Plugin {
   return {
     name: "tram",
-    handler: async (_req, res) => {
+    route: "/tram/:stopId",
+    handler: async (req, res) => {
+      const stopId = parseStopId(req.params.stopId);
+      if (stopId === null) {
+        res.status(400).json({ error: "invalid stop id" });
+        return;
+      }
       try {
-        const data = await client.getDepartures({
-          routeType: ROUTE_TYPE_TRAM,
-          stopId: STOP_ID,
-          maxResults: MAX_RESULTS,
-        });
-        res.json(shapeDepartures(data, now()));
+        res.json(await fetchTramData(client, stopId, now()));
       } catch (err) {
         res.status(502).json({ error: (err as Error).message });
       }

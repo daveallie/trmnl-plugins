@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import type { Request, Response, NextFunction } from "express";
-import { shapeDepartures, createTramPlugin, type TramData } from "../src/plugins/tram.ts";
+import { shapeDepartures, createTramPlugin, parseStopId, type TramData } from "../src/plugins/tram.ts";
 import type { PtvClient } from "../src/ptv/client.ts";
 import type { PtvDeparturesResponse } from "../src/ptv/types.ts";
 
@@ -12,6 +12,10 @@ const fixture: PtvDeparturesResponse = JSON.parse(
 const NOW = new Date("2026-06-13T03:00:00Z"); // 1:00 pm Melbourne (UTC+10, AEST — June has no DST)
 
 const noop: NextFunction = () => {};
+
+function reqWithStop(stopId: string): Request {
+  return { params: { stopId } } as unknown as Request;
+}
 
 // Minimal Express Response stub that records the status code and JSON body.
 function mockRes() {
@@ -55,16 +59,50 @@ test("shapeDepartures handles empty/missing data", () => {
   assert.equal(result.updated_at, "1:00 pm");
 });
 
-test("tram plugin handler returns shaped JSON", async () => {
+test("parseStopId accepts positive integers and rejects anything else", () => {
+  assert.equal(parseStopId("2070"), 2070);
+  assert.equal(parseStopId("abc"), null);
+  assert.equal(parseStopId("12.5"), null);
+  assert.equal(parseStopId(""), null);
+  assert.equal(parseStopId(undefined), null);
+});
+
+test("tram plugin handler returns shaped JSON for the requested stop", async () => {
   const client: PtvClient = { getDepartures: async () => fixture };
   const plugin = createTramPlugin({ client, now: () => NOW });
   assert.equal(plugin.name, "tram");
+  assert.equal(plugin.route, "/tram/:stopId");
 
   const { res, recorded } = mockRes();
-  await plugin.handler({} as Request, res, noop);
+  await plugin.handler(reqWithStop("2070"), res, noop);
   const body = recorded.body as TramData;
   assert.equal(body.departures[0]!.route, "3");
   assert.equal(body.departures.length, 3);
+});
+
+test("tram plugin handler passes the stop id through to the client", async () => {
+  let received: number | undefined;
+  const client: PtvClient = {
+    getDepartures: async ({ stopId }) => {
+      received = stopId;
+      return fixture;
+    },
+  };
+  const plugin = createTramPlugin({ client, now: () => NOW });
+
+  const { res } = mockRes();
+  await plugin.handler(reqWithStop("1234"), res, noop);
+  assert.equal(received, 1234);
+});
+
+test("tram plugin handler returns 400 for an invalid stop id", async () => {
+  const client: PtvClient = { getDepartures: async () => fixture };
+  const plugin = createTramPlugin({ client, now: () => NOW });
+
+  const { res, recorded } = mockRes();
+  await plugin.handler(reqWithStop("not-a-stop"), res, noop);
+  assert.equal(recorded.statusCode, 400);
+  assert.deepEqual(recorded.body, { error: "invalid stop id" });
 });
 
 test("tram plugin handler returns 502 on upstream failure", async () => {
@@ -76,7 +114,7 @@ test("tram plugin handler returns 502 on upstream failure", async () => {
   const plugin = createTramPlugin({ client, now: () => NOW });
 
   const { res, recorded } = mockRes();
-  await plugin.handler({} as Request, res, noop);
+  await plugin.handler(reqWithStop("2070"), res, noop);
   assert.equal(recorded.statusCode, 502);
   assert.match((recorded.body as { error: string }).error, /503/);
 });

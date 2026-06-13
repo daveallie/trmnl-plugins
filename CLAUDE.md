@@ -9,8 +9,8 @@ A Node/Express server (TypeScript) that hosts **TRMNL private plugins** using th
 that TRMNL renders with a Liquid template configured in the TRMNL dashboard. The
 server is built to host multiple plugins over time, distinguished by URL path.
 
-First (and currently only) plugin: **tram** — upcoming PTV tram departures for
-stop 2070, route type 1.
+First (and currently only) plugin: **tram** — upcoming PTV tram departures for a
+given stop (required `:stopId` path param), route type 1.
 
 ## Runtime model — important
 
@@ -49,7 +49,7 @@ src/
   ptv/sign.ts       # signRequest(apiKey, path): HMAC-SHA1 uppercase hex
   ptv/client.ts     # createPtvClient({userId, apiKey, fetchImpl}): getDepartures()
   ptv/types.ts      # PTV API response types
-  plugins/tram.ts   # shapeDepartures() (pure) + createTramPlugin(); constants
+  plugins/tram.ts   # shapeDepartures() (pure), fetchTramData(), parseStopId(), createTramPlugin()
   preview.ts        # createPreviewHandler({loadData}): renders template.liquid to HTML
 test/               # node:test suites (*.test.ts) + fixtures/ptv-departures.json
 template.liquid     # sample TRMNL markup (full layout) — also used by /preview
@@ -65,11 +65,13 @@ template.liquid     # sample TRMNL markup (full layout) — also used by /previe
   Keep time/formatting deterministic and inject `now` rather than reading the clock.
 - **Error contract:** bad/missing Bearer token → `401`; PTV upstream failure → `502`.
   TRMNL keeps the last good render on a failed poll, so 502 is the right signal.
-- **Adding a plugin:** create `src/plugins/<name>.ts` exporting `{ name, handler }`
-  (handler is an Express `RequestHandler`), then add it to the `plugins` array in
-  `src/index.ts`. Auth is applied to all `/plugins/*` routes automatically.
-- **Routes:** `/plugins/<name>` (authenticated, JSON), `/preview/<name>`
-  (unauthenticated local-dev HTML). There is intentionally no `/health` route.
+- **Adding a plugin:** create `src/plugins/<name>.ts` exporting
+  `{ name, route, handler }` (handler is an Express `RequestHandler`; `route` is the
+  sub-path under `/plugins`, e.g. `/tram/:stopId`), then add it to the `plugins`
+  array in `src/index.ts`. It's mounted at `/plugins${route}` with auth applied.
+- **Routes:** `/plugins/tram/:stopId` (authenticated, JSON), `/preview/tram/:stopId`
+  (unauthenticated local-dev HTML; `?mock=1` renders the fixture and ignores the
+  stop id). Invalid stop id → `400`; missing → `404`. No `/health` route.
 
 ## PTV API notes
 
