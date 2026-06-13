@@ -96,8 +96,9 @@ test("GET /preview/tram/:stopId renders HTML from the template", async () => {
     assert.match(res.headers.get("content-type") ?? "", /text\/html/);
     const html = await res.text();
     assert.match(html, /class="screen"/);
-    assert.match(html, /Route 3/);
+    assert.match(html, /Tram Times/);
     assert.match(html, /Moonee Ponds/);
+    assert.match(html, /Melbourne University/);
     assert.match(html, /trmnl\.com\/css/);
   } finally {
     server.close();

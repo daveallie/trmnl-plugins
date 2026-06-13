@@ -36,7 +36,10 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
     createPreviewHandler({
       loadData: async (req): Promise<object> => {
         if (req.query.mock) {
-          return shapeDepartures(JSON.parse(await readFile(fixtureUrl, "utf8")), now());
+          // Anchor "now" to the bundled fixture's reference time so the mock
+          // preview shows representative minutes rather than all-overdue.
+          const mockNow = new Date("2026-06-13T03:00:00Z");
+          return shapeDepartures(JSON.parse(await readFile(fixtureUrl, "utf8")), mockNow);
         }
         const stopId = parseStopId(req.params.stopId);
         if (stopId === null) {

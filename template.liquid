@@ -1,25 +1,49 @@
 <div class="view view--full">
   <div class="layout">
-    <div class="columns">
-      <div class="column">
+    {% if departures.size == 0 %}
+      <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;">
+        <span class="value value--large">No trams</span>
+        <span class="label">Nothing scheduled right now</span>
+      </div>
+    {% else %}
+      <div style="display:flex; flex-direction:column; height:100%;">
         {% for d in departures %}
-          <div class="item">
-            <div class="content">
-              <span class="title">Route {{ d.route }} &middot; {{ d.destination }}</span>
-              <span class="description">
-                {{ d.time }} &middot; {{ d.minutes }} min{% if d.realtime %} &middot; live{% endif %}
+          <div style="flex:1 1 0; display:flex; align-items:center; padding:0 6px;{% unless forloop.last %} border-bottom:2px dashed #555;{% endunless %}">
+            {% comment %} Route number badge {% endcomment %}
+            <div style="flex:0 0 auto; min-width:62px; height:54px; padding:0 10px; display:flex; align-items:center; justify-content:center; border:3px solid #000; border-radius:10px; margin-right:20px;">
+              <span class="value value--medium" style="line-height:1;">{{ d.route }}</span>
+            </div>
+
+            {% comment %} Destination + scheduled time + live indicator {% endcomment %}
+            <div style="flex:1 1 auto; min-width:0; padding-right:16px;">
+              <span class="title title--small" style="display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ d.destination }}</span>
+              <span class="label" style="display:inline-flex; align-items:center; gap:10px;">
+                <span>{{ d.time }}</span>
+                {% if d.realtime %}
+                  <span style="display:inline-flex; align-items:center; gap:5px; font-weight:700; color:#000;">
+                    <span style="width:9px; height:9px; border-radius:50%; background:#000; display:inline-block;"></span>LIVE
+                  </span>
+                {% endif %}
               </span>
+            </div>
+
+            {% comment %} Minutes until departure {% endcomment %}
+            <div style="flex:0 0 auto; text-align:right; min-width:78px;">
+              {% if d.minutes == 0 %}
+                <span class="value value--medium">Due</span>
+              {% else %}
+                <span class="value value--large" style="line-height:1;">{{ d.minutes }}</span>
+                <span class="label" style="display:block;">min</span>
+              {% endif %}
             </div>
           </div>
         {% endfor %}
-        {% if departures.size == 0 %}
-          <div class="item"><div class="content"><span class="title">No upcoming trams</span></div></div>
-        {% endif %}
       </div>
-    </div>
+    {% endif %}
   </div>
+
   <div class="title_bar">
     <span class="title">Tram Times</span>
-    <span class="instance">{{ stop_name }} &middot; updated {{ updated_at }}</span>
+    <span class="instance">{{ stop_name }} &middot; {{ updated_at }}</span>
   </div>
 </div>
