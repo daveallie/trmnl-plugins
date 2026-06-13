@@ -22,7 +22,10 @@ function renderPage(inner: string): string {
   </style>
 </head>
 <body>
-  <div class="screen">${inner}</div>
+  <!-- .trmnl is the scope every framework selector is nested under -->
+  <div class="trmnl">
+    <div class="screen">${inner}</div>
+  </div>
 </body>
 </html>`;
 }
