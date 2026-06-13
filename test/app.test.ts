@@ -87,11 +87,24 @@ test("GET /plugins/tram/:stopId returns 502 when PTV fails", async () => {
   }
 });
 
-test("GET /preview/tram/:stopId renders HTML from the template", async () => {
+test("GET /preview/tram/:stopId requires a valid Bearer token", async () => {
   const client: PtvClient = { getDepartures: async () => fixture };
   const { server, base } = await startApp({ client, now: () => NOW });
   try {
     const res = await fetch(`${base}/preview/tram/2070`);
+    assert.equal(res.status, 401);
+  } finally {
+    server.close();
+  }
+});
+
+test("GET /preview/tram/:stopId renders HTML from the template", async () => {
+  const client: PtvClient = { getDepartures: async () => fixture };
+  const { server, base } = await startApp({ client, now: () => NOW });
+  try {
+    const res = await fetch(`${base}/preview/tram/2070`, {
+      headers: { Authorization: "Bearer s3cret" },
+    });
     assert.equal(res.status, 200);
     assert.match(res.headers.get("content-type") ?? "", /text\/html/);
     const html = await res.text();

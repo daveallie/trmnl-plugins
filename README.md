@@ -64,10 +64,19 @@ npm run typecheck    # tsc --noEmit only
 
 ## Preview without TRMNL
 
-Open `http://localhost:8080/preview/tram/2070` to render the Liquid template with
-live PTV data for a stop, or `http://localhost:8080/preview/tram/2070?mock=1` to
-render from the bundled fixture (no network / no PTV credentials needed; the stop
-id is ignored in mock mode).
+`GET /preview/tram/2070` renders the Liquid template with live PTV data for a
+stop; `?mock=1` renders from the bundled fixture (no network / no PTV credentials
+needed; the stop id is ignored in mock mode).
+
+**Auth applies to every route, including the preview** (it can call the PTV API),
+so the preview needs the `Authorization: Bearer <SERVER_SECRET>` header too:
+
+```bash
+curl -H "Authorization: Bearer $SERVER_SECRET" "http://localhost:8080/preview/tram/2070?mock=1"
+```
+
+To view it in a browser, use an extension that adds the header, or temporarily
+pipe the curl output to a file and open that.
 
 > The `?mock=1` fixture lives under `test/`, which is excluded from the Docker
 > image — mock preview is a local-development affordance. The live preview works

@@ -23,11 +23,13 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
   const now = deps.now || (() => new Date());
 
   const app = express();
-  const auth = createAuthMiddleware(config.serverSecret);
+
+  // Authenticate every route, including the preview (which calls the PTV API).
+  app.use(createAuthMiddleware(config.serverSecret));
 
   const plugins = [createTramPlugin({ client, now })];
   for (const plugin of plugins) {
-    app.get(`/plugins${plugin.route}`, auth, plugin.handler);
+    app.get(`/plugins${plugin.route}`, plugin.handler);
   }
 
   const fixtureUrl = new URL("../test/fixtures/ptv-departures.json", import.meta.url);

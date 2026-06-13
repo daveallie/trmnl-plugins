@@ -63,15 +63,19 @@ template.liquid     # sample TRMNL markup (full layout) — also used by /previe
   `new Date()`, or construct a real client inside request handlers.
 - **Pure shaping.** `shapeDepartures(data, now, opts)` is pure; `now` is passed in.
   Keep time/formatting deterministic and inject `now` rather than reading the clock.
+- **Auth is global.** `app.use(createAuthMiddleware(secret))` in `createApp` gates
+  **every** route, including `/preview/*` (which can call the PTV API). Plugin
+  routes are registered without per-route auth. Don't add an unauthenticated route.
 - **Error contract:** bad/missing Bearer token → `401`; PTV upstream failure → `502`.
   TRMNL keeps the last good render on a failed poll, so 502 is the right signal.
 - **Adding a plugin:** create `src/plugins/<name>.ts` exporting
   `{ name, route, handler }` (handler is an Express `RequestHandler`; `route` is the
   sub-path under `/plugins`, e.g. `/tram/:stopId`), then add it to the `plugins`
   array in `src/index.ts`. It's mounted at `/plugins${route}` with auth applied.
-- **Routes:** `/plugins/tram/:stopId` (authenticated, JSON), `/preview/tram/:stopId`
-  (unauthenticated local-dev HTML; `?mock=1` renders the fixture and ignores the
-  stop id). Invalid stop id → `400`; missing → `404`. No `/health` route.
+- **Routes:** `/plugins/tram/:stopId` (JSON), `/preview/tram/:stopId` (local-dev
+  HTML; `?mock=1` renders the fixture and ignores the stop id). Both are
+  authenticated (auth is global). Invalid stop id → `400`; missing → `404`. No
+  `/health` route.
 
 ## PTV API notes
 
