@@ -94,8 +94,8 @@ test("summaries are cached by story id across polls", async () => {
   const d = { client, summarizer, fetchArticle: async () => "x", cache, now: () => NOW };
   await fetchHackerNewsData(d, NOW);
   await fetchHackerNewsData(d, NOW);
-  // 5 stories summarized once each; the second poll hits the cache.
-  assert.equal(calls.length, 5);
+  // Only the featured 2 stories are summarized, once each; the second poll hits the cache.
+  assert.equal(calls.length, 2);
 });
 
 test("a failing summarizer degrades to an empty summary without crashing", async () => {
