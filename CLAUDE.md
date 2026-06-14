@@ -63,7 +63,7 @@ src/
   llm/claude.ts     # createClaudeSummarizer (Anthropic Messages API) + noopSummarizer
   plugins/hackernews.ts     # HN plugin: domainFromUrl, fetchHackerNewsData (shapes inline), createHackerNewsPlugin
   plugins/hackernews.liquid # hackernews TRMNL markup (full layout)
-  plugins/briefing.ts       # aggregates tram + weather + calendar agenda + HN news digest (graceful per-section degradation); fetchBriefingData, weatherHighlights, buildGreeting, createBriefingPlugin
+  plugins/briefing.ts       # aggregates tram + weather + calendar agenda + HN news digest (graceful per-section degradation); fetchBriefingData, weatherHighlights, createBriefingPlugin
   plugins/briefing.liquid   # briefing TRMNL markup (Layout A: calendar left, weather+trams right, news strip)
   calendar/client.ts        # createCalendarClient: fetch secret iCal URLs (Promise.allSettled)
   calendar/parse.ts         # parseAgenda: expand today's Melbourne events from ICS (via ical-expander)
