@@ -52,6 +52,15 @@ src/
   plugins/tram.ts   # shapeDepartures() (pure), fetchTramData(), parseStopId(), createTramPlugin()
   plugins/tram.liquid  # tram's TRMNL markup (full layout); declared by the plugin as templateUrl
   preview.ts        # createPreviewHandler({templateUrl, loadData}): renders a plugin's template to HTML
+  plugin.ts         # shared Plugin interface (imported by every plugin)
+  time.ts           # formatMelbourneTime (Australia/Melbourne) shared helper
+  cache.ts          # SummaryCache: createMemoryCache + createRedisCache (TTL'd, lazy)
+  hn/client.ts      # createHnClient: getTopStories (Algolia search), getTopComments
+  hn/article.ts     # fetchArticleText via @mozilla/readability + jsdom (best-effort)
+  hn/types.ts       # HN Algolia response types + normalised HnStory
+  llm/claude.ts     # createClaudeSummarizer (Anthropic Messages API) + noopSummarizer
+  plugins/hackernews.ts     # HN plugin: domainFromUrl, fetchHackerNewsData (shapes inline), createHackerNewsPlugin
+  plugins/hackernews.liquid # hackernews TRMNL markup (full layout)
 test/               # node:test suites (*.test.ts) + fixtures/ptv-departures.json
 ```
 
@@ -80,7 +89,9 @@ template it's given — there is no single global template.
 - **Routes:** `/plugins/tram/:stopId` (JSON), `/preview/tram/:stopId` (local-dev
   HTML; `?mock=1` renders the fixture and ignores the stop id). Both are
   authenticated (auth is global). Invalid stop id → `400`; missing → `404`. No
-  `/health` route.
+  `/health` route. The hackernews plugin adds `/plugins/hackernews` (JSON) and
+  `/preview/hackernews` (local-dev HTML; `?mock=1` renders the bundled fixture).
+  Both are authenticated (auth is global); neither takes a path param.
 
 ## PTV API notes
 
@@ -97,6 +108,10 @@ template it's given — there is no single global template.
 `PTV_USER_ID`, `PTV_API_KEY`, `SERVER_SECRET` (Bearer token TRMNL must send) are
 required; `PORT` defaults to 8080. They live in `.env` (gitignored, never commit it).
 `config.ts` validates the required ones at startup and throws if any are missing.
+
+`ANTHROPIC_API_KEY` (optional — enables the hackernews plugin's AI summaries; without
+it stories render summary-less) and `REDIS_URL` (optional — defaults to
+`redis://localhost:6379`, set to `redis://redis:6379` in docker-compose) are also read.
 
 ## Testing expectations
 

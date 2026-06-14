@@ -9,10 +9,23 @@ import {
   fetchTramData,
   parseStopId,
 } from "./plugins/tram.ts";
+import { createHnClient, parseSearchHits, type HnClient } from "./hn/client.ts";
+import { fetchArticleText } from "./hn/article.ts";
+import { createClaudeSummarizer, noopSummarizer, type Summarizer } from "./llm/claude.ts";
+import { createRedisCache, createMemoryCache, type SummaryCache } from "./cache.ts";
+import {
+  createHackerNewsPlugin,
+  fetchHackerNewsData,
+  type ArticleFetcher,
+} from "./plugins/hackernews.ts";
 import { createPreviewHandler } from "./preview.ts";
 
 export interface AppDeps {
   client?: PtvClient;
+  hnClient?: HnClient;
+  summarizer?: Summarizer;
+  fetchArticle?: ArticleFetcher;
+  cache?: SummaryCache;
   now?: () => Date;
 }
 
@@ -20,15 +33,24 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
   const client =
     deps.client ||
     createPtvClient({ userId: config.ptvUserId, apiKey: config.ptvApiKey });
+  const hnClient = deps.hnClient || createHnClient();
+  const summarizer =
+    deps.summarizer ||
+    (config.anthropicApiKey
+      ? createClaudeSummarizer({ apiKey: config.anthropicApiKey })
+      : noopSummarizer);
+  const fetchArticle: ArticleFetcher = deps.fetchArticle || fetchArticleText;
+  const cache = deps.cache || createRedisCache({ url: config.redisUrl });
   const now = deps.now || (() => new Date());
 
   const app = express();
 
-  // Authenticate every route, including the preview (which calls the PTV API).
+  // Authenticate every route, including the preview (which calls upstream APIs).
   app.use(createAuthMiddleware(config.serverSecret));
 
   const tram = createTramPlugin({ client, now });
-  const plugins = [tram];
+  const hackernews = createHackerNewsPlugin({ client: hnClient, summarizer, fetchArticle, cache, now });
+  const plugins = [tram, hackernews];
   for (const plugin of plugins) {
     app.get(`/plugins${plugin.route}`, plugin.handler);
   }
@@ -50,6 +72,39 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
           throw new Error("invalid stop id");
         }
         return fetchTramData(client, stopId, now());
+      },
+    }),
+  );
+
+  const hnFixtureUrl = new URL("../test/fixtures/hn-search.json", import.meta.url);
+  app.get(
+    "/preview/hackernews",
+    createPreviewHandler({
+      templateUrl: hackernews.templateUrl,
+      loadData: async (req): Promise<object> => {
+        if (req.query.mock) {
+          const mockNow = new Date("2026-06-14T00:00:00Z");
+          const fixture = parseSearchHits(JSON.parse(await readFile(hnFixtureUrl, "utf8")));
+          const mockClient: HnClient = {
+            async getTopStories() {
+              return fixture;
+            },
+            async getTopComments() {
+              return [];
+            },
+          };
+          return fetchHackerNewsData(
+            {
+              client: mockClient,
+              summarizer: async ({ title }) => `A concise summary of "${title}".`,
+              fetchArticle: async () => "",
+              cache: createMemoryCache(),
+              now: () => mockNow,
+            },
+            mockNow,
+          );
+        }
+        return fetchHackerNewsData({ client: hnClient, summarizer, fetchArticle, cache, now }, now());
       },
     }),
   );
