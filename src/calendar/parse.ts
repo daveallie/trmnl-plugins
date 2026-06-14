@@ -19,8 +19,12 @@ const DEFAULT_LIMIT = 5;
 // Returns [] for any calendar that fails to parse, so one bad feed can't sink the rest.
 function expandOne(ics: string, start: Date, end: Date): RawEvent[] {
   try {
+    // one year of daily recurrences is far more than a same-day window needs
     const expander = new IcalExpander({ ics, maxIterations: 365 });
-    const { events, occurrences } = expander.between(start, end);
+    // between()'s upper bound is inclusive, so subtract 1ms to keep end exclusive
+    // and match the [start, end) window contract from melbourneDayBounds.
+    const exclusiveEnd = new Date(end.getTime() - 1);
+    const { events, occurrences } = expander.between(start, exclusiveEnd);
     const fromEvents = events.map((e) => ({
       start: e.startDate.toJSDate(),
       allDay: e.startDate.isDate,
