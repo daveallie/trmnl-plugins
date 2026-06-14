@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { formatTime, formatDay, formatHour12 } from "../src/time.ts";
 import { weatherCodeToIcon } from "../src/weather/icons.ts";
+import { createWeatherClient } from "../src/weather/client.ts";
 
 test("formatTime formats an instant in a timezone, lowercased", () => {
   assert.equal(formatTime(new Date("2026-06-14T11:18:00Z"), "UTC"), "11:18 am");
@@ -35,4 +36,36 @@ test("weatherCodeToIcon maps WMO codes to a category icon + label", () => {
 
 test("weatherCodeToIcon falls back to cloudy/Unknown for unknown codes", () => {
   assert.deepEqual(weatherCodeToIcon(999), { icon: "cloudy", label: "Unknown" });
+});
+
+test("getForecast builds the Open-Meteo URL with coords, fields, timezone and days", async () => {
+  let calledUrl = "";
+  const client = createWeatherClient({
+    fetchImpl: async (url: string) => {
+      calledUrl = url;
+      return { ok: true, json: async () => ({ ok: 1 }) };
+    },
+  });
+
+  const data = await client.getForecast({ latitude: -37.81, longitude: 144.96 });
+
+  assert.deepEqual(data, { ok: 1 });
+  assert.ok(calledUrl.startsWith("https://api.open-meteo.com/v1/forecast?"));
+  assert.match(calledUrl, /latitude=-37\.81/);
+  assert.match(calledUrl, /longitude=144\.96/);
+  assert.match(calledUrl, /timezone=auto/);
+  assert.match(calledUrl, /forecast_days=7/);
+  assert.match(calledUrl, /current=temperature_2m/);
+  assert.match(calledUrl, /hourly=precipitation_probability/);
+  assert.match(calledUrl, /daily=weather_code/);
+});
+
+test("getForecast throws on a non-ok response", async () => {
+  const client = createWeatherClient({
+    fetchImpl: async () => ({ ok: false, status: 503, json: async () => ({}) }),
+  });
+  await assert.rejects(
+    () => client.getForecast({ latitude: 0, longitude: 0 }),
+    /Open-Meteo API returned 503/,
+  );
 });
