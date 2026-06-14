@@ -20,13 +20,14 @@ export function createMemoryCache(): SummaryCache {
 export interface RedisCacheOptions {
   url: string;
   ttlSeconds?: number;
+  keyPrefix?: string;
 }
 
 const SEVEN_DAYS = 7 * 24 * 60 * 60;
 
 // Redis-backed cache. Connection is lazy and all errors are swallowed so the
 // plugin keeps working (regenerating summaries) when Redis is unavailable.
-export function createRedisCache({ url, ttlSeconds = SEVEN_DAYS }: RedisCacheOptions): SummaryCache {
+export function createRedisCache({ url, ttlSeconds = SEVEN_DAYS, keyPrefix = "hn:summary:" }: RedisCacheOptions): SummaryCache {
   const client = createClient({ url });
   client.on("error", (err: Error) => console.error("redis cache error:", err.message));
 
@@ -43,7 +44,7 @@ export function createRedisCache({ url, ttlSeconds = SEVEN_DAYS }: RedisCacheOpt
     return connecting;
   }
 
-  const key = (id: number) => `hn:summary:${id}`;
+  const key = (id: number) => `${keyPrefix}${id}`;
 
   return {
     async get(id) {

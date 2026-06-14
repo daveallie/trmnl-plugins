@@ -9,8 +9,8 @@ A Node/Express server (TypeScript) that hosts **TRMNL private plugins** using th
 that TRMNL renders with a Liquid template configured in the TRMNL dashboard. The
 server is built to host multiple plugins over time, distinguished by URL path.
 
-First (and currently only) plugin: **tram** — upcoming PTV tram departures for a
-given stop (required `:stopId` path param), route type 1.
+Plugins: **tram** (PTV tram departures), **hackernews** (AI-summarised HN stories),
+**weather** (rain-focused forecast), **briefing** (daily agenda + weather + trams + HN digest).
 
 ## Runtime model — important
 
@@ -23,6 +23,8 @@ given stop (required `:stopId` path param), route type 1.
 - **Only erasable TS syntax is allowed** (interfaces, type aliases, annotations,
   `as`, `!`, `import type`). Do NOT use enums, namespaces, parameter properties, or
   constructor shorthand — Node's type-stripping rejects them.
+- **`ical-expander`** is a runtime dependency (used by the calendar parser). It ships
+  CommonJS and has no types — ambient types live in `src/calendar/ical-expander.d.ts`.
 - `tsconfig.json` is `strict` + `noUncheckedIndexedAccess` + `verbatimModuleSyntax`
   + `allowImportingTsExtensions` + `noEmit`, `module/moduleResolution: nodenext`.
   Honor `verbatimModuleSyntax`: type-only imports use `import type`.
@@ -61,6 +63,11 @@ src/
   llm/claude.ts     # createClaudeSummarizer (Anthropic Messages API) + noopSummarizer
   plugins/hackernews.ts     # HN plugin: domainFromUrl, fetchHackerNewsData (shapes inline), createHackerNewsPlugin
   plugins/hackernews.liquid # hackernews TRMNL markup (full layout)
+  plugins/briefing.ts       # aggregates tram + weather + calendar agenda + HN news digest (graceful per-section degradation); fetchBriefingData, weatherHighlights, createBriefingPlugin
+  plugins/briefing.liquid   # briefing TRMNL markup (Layout A: calendar left, weather+trams right, news strip)
+  calendar/client.ts        # createCalendarClient: fetch secret iCal URLs (Promise.allSettled)
+  calendar/parse.ts         # parseAgenda: expand today's Melbourne events from ICS (via ical-expander)
+  calendar/ical-expander.d.ts # ambient types for the untyped ical-expander package
 test/               # node:test suites (*.test.ts) + fixtures/ptv-departures.json
 ```
 
@@ -79,8 +86,11 @@ template it's given — there is no single global template.
 - **Auth is global.** `app.use(createAuthMiddleware(secret))` in `createApp` gates
   **every** route, including `/preview/*` (which can call the PTV API). Plugin
   routes are registered without per-route auth. Don't add an unauthenticated route.
-- **Error contract:** bad/missing Bearer token → `401`; PTV upstream failure → `502`.
+- **Error contract:** bad/missing Bearer token → `401`; upstream failure → `502`.
   TRMNL keeps the last good render on a failed poll, so 502 is the right signal.
+  **Exception — briefing plugin:** each section is fetched independently and a failed
+  section degrades to an "unavailable" block; the response stays `200`. Bad query
+  params still return `400`.
 - **Adding a plugin:** create `src/plugins/<name>.ts` exporting
   `{ name, route, handler, templateUrl }` (handler is an Express `RequestHandler`;
   `route` is the sub-path under `/plugins`, e.g. `/tram/:stopId`; `templateUrl` is a
@@ -92,6 +102,11 @@ template it's given — there is no single global template.
   `/health` route. The hackernews plugin adds `/plugins/hackernews` (JSON) and
   `/preview/hackernews` (local-dev HTML; `?mock=1` renders the bundled fixture).
   Both are authenticated (auth is global); neither takes a path param.
+  The briefing plugin adds `/plugins/briefing?stop=<id>&coords=<lat,lon>` (JSON;
+  missing/invalid stop or coords → `400`; per-section upstream failure degrades to an
+  "unavailable" block and still returns `200` — unlike other plugins which `502`) and
+  `/preview/briefing` (local-dev HTML; `?mock=1` renders bundled fixtures). Both are
+  authenticated (auth is global).
 
 ## PTV API notes
 
@@ -109,9 +124,12 @@ template it's given — there is no single global template.
 required; `PORT` defaults to 8080. They live in `.env` (gitignored, never commit it).
 `config.ts` validates the required ones at startup and throws if any are missing.
 
-`ANTHROPIC_API_KEY` (optional — enables the hackernews plugin's AI summaries; without
-it stories render summary-less) and `REDIS_URL` (optional — defaults to
-`redis://localhost:6379`, set to `redis://redis:6379` in docker-compose) are also read.
+`ANTHROPIC_API_KEY` (optional — enables the hackernews plugin's AI summaries and the
+briefing plugin's news digest; without it those sections render summary-less/omitted),
+`REDIS_URL` (optional — defaults to `redis://localhost:6379`, set to
+`redis://redis:6379` in docker-compose), and `BRIEFING_ICS_URLS` (optional —
+comma-separated secret Google Calendar "iCal format" URLs; unset → briefing calendar
+section renders unavailable) are also read.
 
 `SKIP_AUTH` (`"1"`/`"true"`) is an optional **local-only escape hatch**: when set,
 `createApp` skips the auth middleware entirely (logs a warning) so previews work

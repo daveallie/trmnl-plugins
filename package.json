@@ -12,6 +12,7 @@
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
     "express": "^4.21.2",
+    "ical-expander": "^2.1.0",
     "jsdom": "^29.1.1",
     "liquidjs": "^10.21.0",
     "redis": "^6.0.0"

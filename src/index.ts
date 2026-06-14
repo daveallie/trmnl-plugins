@@ -11,7 +11,14 @@ import {
 } from "./plugins/tram.ts";
 import { createHnClient, parseSearchHits, type HnClient } from "./hn/client.ts";
 import { fetchArticleText } from "./hn/article.ts";
-import { createClaudeSummarizer, noopSummarizer, type Summarizer } from "./llm/claude.ts";
+import {
+  createClaudeSummarizer,
+  noopSummarizer,
+  type Summarizer,
+  createClaudeDigester,
+  noopDigester,
+  type Digester,
+} from "./llm/claude.ts";
 import { createRedisCache, createMemoryCache, type SummaryCache } from "./cache.ts";
 import {
   createHackerNewsPlugin,
@@ -25,6 +32,12 @@ import {
   fetchWeatherData,
   parseLatLon,
 } from "./plugins/weather.ts";
+import { createCalendarClient, type CalendarClient } from "./calendar/client.ts";
+import {
+  createBriefingPlugin,
+  fetchBriefingData,
+  type BriefingDeps,
+} from "./plugins/briefing.ts";
 import { createPreviewHandler } from "./preview.ts";
 
 export interface AppDeps {
@@ -34,6 +47,9 @@ export interface AppDeps {
   fetchArticle?: ArticleFetcher;
   cache?: SummaryCache;
   weatherClient?: WeatherClient;
+  digester?: Digester;
+  calendarClient?: CalendarClient;
+  digestCache?: SummaryCache;
   now?: () => Date;
 }
 
@@ -49,6 +65,14 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
       : noopSummarizer);
   const fetchArticle: ArticleFetcher = deps.fetchArticle || fetchArticleText;
   const cache = deps.cache || createRedisCache({ url: config.redisUrl });
+  const digester =
+    deps.digester ||
+    (config.anthropicApiKey ? createClaudeDigester({ apiKey: config.anthropicApiKey }) : noopDigester);
+  const calendarClient =
+    deps.calendarClient || createCalendarClient({ icsUrls: config.briefingIcsUrls });
+  const digestCache =
+    deps.digestCache ||
+    createRedisCache({ url: config.redisUrl, keyPrefix: "briefing:digest:", ttlSeconds: 60 * 60 });
   const now = deps.now || (() => new Date());
 
   const app = express();
@@ -66,7 +90,16 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
   const tram = createTramPlugin({ client, now });
   const hackernews = createHackerNewsPlugin({ client: hnClient, summarizer, fetchArticle, cache, now });
   const weather = createWeatherPlugin({ client: weatherClient, now });
-  const plugins = [tram, hackernews, weather];
+  const briefing = createBriefingPlugin({
+    ptvClient: client,
+    weatherClient,
+    hnClient,
+    calendarClient,
+    digester,
+    digestCache,
+    now,
+  });
+  const plugins = [tram, hackernews, weather, briefing];
   for (const plugin of plugins) {
     app.get(`/plugins${plugin.route}`, plugin.handler);
   }
@@ -144,6 +177,55 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
           throw new Error("invalid coordinates");
         }
         return fetchWeatherData(weatherClient, coords, now());
+      },
+    }),
+  );
+
+  app.get(
+    "/preview/briefing",
+    createPreviewHandler({
+      templateUrl: briefing.templateUrl,
+      loadData: async (req): Promise<object> => {
+        if (req.query.mock) {
+          const mockNow = new Date("2026-06-13T21:00:00Z"); // 7:00 am Melbourne June 14; shows all calendar fixtures
+          const tramFixture = JSON.parse(await readFile(fixtureUrl, "utf8"));
+          const wxFixture = JSON.parse(await readFile(weatherFixtureUrl, "utf8"));
+          const calFixture = await readFile(
+            new URL("../test/fixtures/briefing-calendar.ics", import.meta.url),
+            "utf8",
+          );
+          const mockDeps: BriefingDeps = {
+            ptvClient: { async getDepartures() { return tramFixture; } },
+            weatherClient: { async getForecast() { return wxFixture; } },
+            hnClient: {
+              async getTopStories() {
+                return [
+                  { id: 1, title: "AI labs race to ship autonomous agents", author: "a", points: 9, num_comments: 1, created_at_i: 0 },
+                  { id: 2, title: "New chip startup claims 3x efficiency", author: "b", points: 8, num_comments: 1, created_at_i: 0 },
+                ];
+              },
+              async getTopComments() { return []; },
+            },
+            calendarClient: createCalendarClient({
+              icsUrls: ["mock"],
+              fetchImpl: async () => ({ ok: true, async text() { return calFixture; } }),
+            }),
+            digester: async () =>
+              "AI labs race to ship autonomous agents as a new chip startup claims a 3x efficiency win. Debate continues over open-weights safety.",
+            digestCache: createMemoryCache(),
+            stop: 1,
+            coords: { latitude: -37.81, longitude: 144.96 },
+            now: () => mockNow,
+          };
+          return fetchBriefingData(mockDeps, mockNow);
+        }
+        const stop = parseStopId(typeof req.query.stop === "string" ? req.query.stop : undefined);
+        const coords = parseLatLon(typeof req.query.coords === "string" ? req.query.coords : undefined);
+        if (stop === null || coords === null) throw new Error("missing or invalid stop/coords");
+        return fetchBriefingData(
+          { ptvClient: client, weatherClient, hnClient, calendarClient, digester, digestCache, stop, coords, now },
+          now(),
+        );
       },
     }),
   );

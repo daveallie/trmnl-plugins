@@ -48,3 +48,13 @@ test("loadConfig does not require the optional vars", () => {
   // base has no ANTHROPIC_API_KEY / REDIS_URL and must not throw.
   assert.doesNotThrow(() => loadConfig(base));
 });
+
+test("briefingIcsUrls parses a comma-separated list and trims blanks", () => {
+  const cfg = loadConfig({ ...base, BRIEFING_ICS_URLS: " http://a , http://b ,, " } as NodeJS.ProcessEnv);
+  assert.deepEqual(cfg.briefingIcsUrls, ["http://a", "http://b"]);
+});
+
+test("briefingIcsUrls defaults to an empty array when unset", () => {
+  const cfg = loadConfig(base as NodeJS.ProcessEnv);
+  assert.deepEqual(cfg.briefingIcsUrls, []);
+});

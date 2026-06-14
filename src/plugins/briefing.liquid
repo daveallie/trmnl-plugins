@@ -1,0 +1,84 @@
+<div class="view view--full">
+  <div class="layout">
+    <div style="display:flex; flex-direction:column; height:100%; width:100%; box-sizing:border-box;">
+
+      {% comment %} Body: wide left (agenda) + right column (weather + trams) {% endcomment %}
+      <div style="flex:1 1 0; display:flex; min-height:0; width:100%; box-sizing:border-box;">
+
+        {% comment %} Left column: today's calendar agenda {% endcomment %}
+        <div style="flex:1.25 1 0; min-width:0; box-sizing:border-box; padding-right:18px; border-right:3px solid #000;">
+          <span class="label label--small font--bold" style="display:block; margin-bottom:8px;">TODAY</span>
+          {% if agenda %}
+            {% if agenda.events.size == 0 %}
+              <span class="label">Nothing scheduled</span>
+            {% else %}
+              {% for e in agenda.events %}
+                <div class="flex" style="gap:12px; align-items:baseline; margin-bottom:8px;">
+                  <span class="value value--small value--tnums shrink-0" style="width:86px; white-space:nowrap;">{{ e.time }}</span>
+                  <span class="value value--small" style="flex:1 1 0; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ e.title }}</span>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% else %}
+            <span class="label">Calendar unavailable</span>
+          {% endif %}
+        </div>
+
+        {% comment %} Right column: weather (compact) over trams {% endcomment %}
+        <div style="flex:1 1 0; min-width:0; box-sizing:border-box; display:flex; flex-direction:column; padding-left:18px;">
+
+          {% comment %} Weather — compact {% endcomment %}
+          <div style="flex:0 0 auto; padding-bottom:8px; border-bottom:2px solid #000;">
+            <span class="label label--small font--bold" style="display:block; margin-bottom:2px;">WEATHER</span>
+            {% if weather %}
+              <span class="value value--base">{{ weather.temp }}&deg; {{ weather.label }}</span>
+              <span class="label label--small" style="display:block; margin-top:3px;">{{ weather.high }}&deg; / {{ weather.low }}&deg; &middot; {{ weather.rainChance }}% rain</span>
+              <div class="flex" style="gap:16px; margin-top:2px;">
+                <span class="label label--small">&uarr; {{ weather.sunrise }}</span>
+                <span class="label label--small">&darr; {{ weather.sunset }}</span>
+              </div>
+            {% else %}
+              <span class="label">Weather unavailable</span>
+            {% endif %}
+          </div>
+
+          {% comment %} Next trams — route number + time only {% endcomment %}
+          <div style="flex:1 1 0; min-height:0; padding-top:8px;">
+            <span class="label label--small font--bold" style="display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin-bottom:6px;">NEXT TRAMS{% if tram %} &middot; {{ tram.stopName }}{% endif %}</span>
+            {% if tram %}
+              {% if tram.departures.size == 0 %}
+                <span class="label">No trams soon</span>
+              {% else %}
+                {% for d in tram.departures %}
+                  <div class="flex flex--between" style="align-items:baseline; margin-bottom:6px;">
+                    <span class="value value--base shrink-0">{{ d.route }}</span>
+                    <span class="value value--base value--tnums">{{ d.time }}</span>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% else %}
+              <span class="label">Trams unavailable</span>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+      {% comment %} News digest — full width, larger body text {% endcomment %}
+      <div style="flex:0 0 auto; padding-top:8px; border-top:3px solid #000;">
+        <span class="label label--small font--bold" style="display:block; margin-bottom:3px;">TECH TODAY</span>
+        {% if news %}
+          <span class="description description--large" data-clamp="2" style="display:block;">{{ news.digest }}</span>
+        {% else %}
+          <span class="label">News unavailable</span>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <div class="title_bar">
+    <span class="title">Daily Briefing</span>
+    <span class="instance">{{ date }} &middot; Updated {{ updated_at }}</span>
+  </div>
+</div>
