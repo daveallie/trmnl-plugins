@@ -113,6 +113,10 @@ required; `PORT` defaults to 8080. They live in `.env` (gitignored, never commit
 it stories render summary-less) and `REDIS_URL` (optional — defaults to
 `redis://localhost:6379`, set to `redis://redis:6379` in docker-compose) are also read.
 
+`SKIP_AUTH` (`"1"`/`"true"`) is an optional **local-only escape hatch**: when set,
+`createApp` skips the auth middleware entirely (logs a warning) so previews work
+without a Bearer token. Never set it in production — it makes every route public.
+
 ## Testing expectations
 
 - Use the built-in `node:test` runner + `node:assert/strict`. No Jest/Vitest.

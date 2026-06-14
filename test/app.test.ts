@@ -16,7 +16,7 @@ const fixture: PtvDeparturesResponse = JSON.parse(
   await readFile(new URL("./fixtures/ptv-departures.json", import.meta.url), "utf8"),
 );
 const NOW = new Date("2026-06-13T03:00:00Z");
-const config: Config = { ptvUserId: "1", ptvApiKey: "k", serverSecret: "s3cret", port: 0, redisUrl: "redis://localhost:6379" };
+const config: Config = { ptvUserId: "1", ptvApiKey: "k", serverSecret: "s3cret", port: 0, redisUrl: "redis://localhost:6379", skipAuth: false };
 
 const hnSearch: HnSearchResponse = JSON.parse(
   await readFile(new URL("./fixtures/hn-search.json", import.meta.url), "utf8"),
@@ -65,6 +65,19 @@ test("GET /plugins/tram/:stopId requires a valid Bearer token", async () => {
     assert.equal(body.stop_name, "Glenferrie Rd/Dandenong Rd");
     assert.equal(body.departures.length, 3);
     assert.equal(body.departures[0]!.route, "3");
+  } finally {
+    server.close();
+  }
+});
+
+test("skipAuth allows requests with no Bearer token", async () => {
+  const client: PtvClient = { getDepartures: async () => fixture };
+  const app = createApp({ ...config, skipAuth: true }, { client, now: () => NOW });
+  const server = app.listen(0);
+  try {
+    const { port } = server.address() as AddressInfo;
+    const res = await fetch(`http://127.0.0.1:${port}/plugins/tram/2070`);
+    assert.equal(res.status, 200);
   } finally {
     server.close();
   }

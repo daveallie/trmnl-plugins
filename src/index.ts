@@ -46,7 +46,12 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
   const app = express();
 
   // Authenticate every route, including the preview (which calls upstream APIs).
-  app.use(createAuthMiddleware(config.serverSecret));
+  // SKIP_AUTH bypasses this for local previews — never set it in production.
+  if (config.skipAuth) {
+    console.warn("⚠️  SKIP_AUTH is set — auth is disabled and all routes are public");
+  } else {
+    app.use(createAuthMiddleware(config.serverSecret));
+  }
 
   const tram = createTramPlugin({ client, now });
   const hackernews = createHackerNewsPlugin({ client: hnClient, summarizer, fetchArticle, cache, now });

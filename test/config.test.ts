@@ -21,6 +21,13 @@ test("loadConfig honours PORT override", () => {
   assert.equal(cfg.port, 3000);
 });
 
+test("loadConfig defaults skipAuth to false and honours SKIP_AUTH", () => {
+  assert.equal(loadConfig(base).skipAuth, false);
+  assert.equal(loadConfig({ ...base, SKIP_AUTH: "true" }).skipAuth, true);
+  assert.equal(loadConfig({ ...base, SKIP_AUTH: "1" }).skipAuth, true);
+  assert.equal(loadConfig({ ...base, SKIP_AUTH: "false" }).skipAuth, false);
+});
+
 test("loadConfig throws listing all missing required vars", () => {
   assert.throws(() => loadConfig({}), /PTV_USER_ID.*PTV_API_KEY.*SERVER_SECRET/s);
 });
