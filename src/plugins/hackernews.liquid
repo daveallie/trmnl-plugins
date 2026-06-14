@@ -6,23 +6,20 @@
         <span class="label">Nothing in the last 24 hours</span>
       </div>
     {% else %}
+      {% comment %} Rows distribute evenly over the fixed height; hierarchy comes
+      from weight + size (black throughout) so it survives 1-bit dithering. {% endcomment %}
       <div style="display:flex; flex-direction:column; height:100%; width:100%;">
         {% for s in stories %}
-          <div style="flex:1 1 0; min-height:0; overflow:hidden; display:flex; align-items:center; gap:14px; padding:0 2px;{% unless forloop.last %} border-bottom:1px solid #ccc;{% endunless %}">
-            {% comment %} Rank: a light anchor in the left gutter (replaces the old QR column) {% endcomment %}
-            <div style="flex:0 0 28px; text-align:center;">
-              <span style="font-size:28px; font-weight:700; color:#bbb; line-height:1;">{{ forloop.index }}</span>
+          <div class="item" style="flex:1 1 0; min-height:0; align-items:center; overflow:hidden;{% unless forloop.last %} border-bottom:1px solid #000;{% endunless %}">
+            <div class="meta">
+              <span class="index">{{ forloop.index }}</span>
             </div>
-
-            {% comment %} Three visual tiers: bold title → muted summary → small light metadata {% endcomment %}
-            <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:2px;">
-              <span style="font-size:20px; font-weight:700; line-height:1.15; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.title }}</span>
-
+            <div class="content">
+              <span class="title title--small" style="overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.title }}</span>
               {% if s.summary != "" %}
-                <span style="font-size:14px; font-weight:400; line-height:1.2; color:#555; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">{{ s.summary }}</span>
+                <span class="description" data-clamp="2">{{ s.summary }}</span>
               {% endif %}
-
-              <span style="font-size:12px; font-weight:400; line-height:1; color:#888; letter-spacing:0.2px;">{{ s.points }} pts &nbsp;&middot;&nbsp; {{ s.comments }} comments &nbsp;&middot;&nbsp; {{ s.domain }} &nbsp;&middot;&nbsp; {{ s.author }}</span>
+              <span class="label label--small" style="overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.points }} pts &middot; {{ s.comments }} comments &middot; {{ s.domain }} &middot; {{ s.author }}</span>
             </div>
           </div>
         {% endfor %}
