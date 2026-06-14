@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { formatTime, formatDay, formatHour12 } from "../src/time.ts";
 import { weatherCodeToIcon } from "../src/weather/icons.ts";
 import { createWeatherClient } from "../src/weather/client.ts";
+import { parseLatLon, degToCompass } from "../src/plugins/weather.ts";
 
 test("formatTime formats an instant in a timezone, lowercased", () => {
   assert.equal(formatTime(new Date("2026-06-14T11:18:00Z"), "UTC"), "11:18 am");
@@ -68,4 +69,27 @@ test("getForecast throws on a non-ok response", async () => {
     () => client.getForecast({ latitude: 0, longitude: 0 }),
     /Open-Meteo API returned 503/,
   );
+});
+
+test("parseLatLon accepts a valid lat,lon pair", () => {
+  assert.deepEqual(parseLatLon("-37.81,144.96"), { latitude: -37.81, longitude: 144.96 });
+  assert.deepEqual(parseLatLon("0,0"), { latitude: 0, longitude: 0 });
+});
+
+test("parseLatLon rejects malformed, missing, out-of-range, or extra parts", () => {
+  assert.equal(parseLatLon(undefined), null);
+  assert.equal(parseLatLon(""), null);
+  assert.equal(parseLatLon("melbourne"), null);
+  assert.equal(parseLatLon("-37.81"), null);
+  assert.equal(parseLatLon("-37.81,144.96,5"), null);
+  assert.equal(parseLatLon("91,0"), null);
+  assert.equal(parseLatLon("0,181"), null);
+  assert.equal(parseLatLon("abc,def"), null);
+});
+
+test("degToCompass maps degrees to an 8-point label", () => {
+  assert.equal(degToCompass(0), "N");
+  assert.equal(degToCompass(315), "NW");
+  assert.equal(degToCompass(360), "N");
+  assert.equal(degToCompass(90), "E");
 });
