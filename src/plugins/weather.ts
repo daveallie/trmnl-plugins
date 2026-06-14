@@ -1,3 +1,7 @@
+import type { OpenMeteoResponse } from "../weather/types.ts";
+import { weatherCodeToIcon, type IconKey } from "../weather/icons.ts";
+import { formatTime, formatDay, formatHour12 } from "../time.ts";
+
 export interface LatLon {
   latitude: number;
   longitude: number;
@@ -22,4 +26,96 @@ const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 // Degrees (0-360, N=0, clockwise) → 8-point compass label.
 export function degToCompass(deg: number): string {
   return COMPASS[Math.round(deg / 45) % 8]!;
+}
+
+export interface HourlyRain {
+  hour: string;
+  chance: number;
+}
+
+export interface DailyOutlook {
+  day: string;
+  chance: number;
+  high: number;
+  low: number;
+  icon: IconKey;
+}
+
+export interface WeatherData {
+  location: string;
+  updated_at: string;
+  sunrise: string;
+  sunset: string;
+  current: {
+    temp: number;
+    feelsLike: number;
+    wind: { speed: number; direction: string };
+    icon: IconKey;
+    label: string;
+  };
+  hourly: HourlyRain[];
+  daily: DailyOutlook[];
+}
+
+const HOURS_AHEAD = 12;
+
+// Interpret a location-local naive ISO string ("2026-06-14T11:00") as a Date
+// whose UTC fields equal the local wall clock. Lets us format/compare local
+// times deterministically without a real timezone database lookup.
+function localToUTCDate(naive: string): Date {
+  const withSeconds = naive.length === 16 ? `${naive}:00` : naive;
+  return new Date(`${withSeconds}Z`);
+}
+
+export function shapeForecast(data: OpenMeteoResponse, now: Date): WeatherData {
+  const offsetMs = data.utc_offset_seconds * 1000;
+  // `now` shifted so its UTC fields equal the location's local wall clock.
+  const nowLocal = new Date(now.getTime() + offsetMs);
+  const nowLocalMs = nowLocal.getTime();
+
+  const currentIcon = weatherCodeToIcon(data.current.weather_code);
+
+  // Hourly: first bucket still in the future (end of hour > now), then 12 of them.
+  const times = data.hourly.time;
+  const probs = data.hourly.precipitation_probability;
+  let start = times.findIndex((t) => localToUTCDate(t).getTime() + 3_600_000 > nowLocalMs);
+  if (start < 0) start = 0;
+  const hourly: HourlyRain[] = [];
+  for (let i = start; i < times.length && hourly.length < HOURS_AHEAD; i++) {
+    const t = times[i]!;
+    hourly.push({
+      hour: formatHour12(localToUTCDate(t).getUTCHours()),
+      chance: probs[i] ?? 0,
+    });
+  }
+
+  const daily: DailyOutlook[] = data.daily.time.map((dateStr, i) => {
+    const date = localToUTCDate(`${dateStr}T00:00`);
+    return {
+      day: i === 0 ? "Today" : formatDay(date, "UTC"),
+      chance: data.daily.precipitation_probability_max[i] ?? 0,
+      high: Math.round(data.daily.temperature_2m_max[i] ?? 0),
+      low: Math.round(data.daily.temperature_2m_min[i] ?? 0),
+      icon: weatherCodeToIcon(data.daily.weather_code[i] ?? -1).icon,
+    };
+  });
+
+  return {
+    location: `${data.latitude}, ${data.longitude}`,
+    updated_at: formatTime(nowLocal, "UTC"),
+    sunrise: formatTime(localToUTCDate(data.daily.sunrise[0] ?? ""), "UTC"),
+    sunset: formatTime(localToUTCDate(data.daily.sunset[0] ?? ""), "UTC"),
+    current: {
+      temp: Math.round(data.current.temperature_2m),
+      feelsLike: Math.round(data.current.apparent_temperature),
+      wind: {
+        speed: Math.round(data.current.wind_speed_10m),
+        direction: degToCompass(data.current.wind_direction_10m),
+      },
+      icon: currentIcon.icon,
+      label: currentIcon.label,
+    },
+    hourly,
+    daily,
+  };
 }
