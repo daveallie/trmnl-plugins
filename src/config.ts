@@ -6,6 +6,7 @@ export interface Config {
   anthropicApiKey?: string;
   redisUrl: string;
   skipAuth: boolean;
+  briefingIcsUrls: string[];
 }
 
 const REQUIRED = ["PTV_USER_ID", "PTV_API_KEY", "SERVER_SECRET"] as const;
@@ -24,5 +25,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     redisUrl: env.REDIS_URL || "redis://localhost:6379",
     // Escape hatch for local previews only: bypass the Bearer-token check.
     skipAuth: env.SKIP_AUTH === "true" || env.SKIP_AUTH === "1",
+    briefingIcsUrls: (env.BRIEFING_ICS_URLS ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s !== ""),
   };
 }
