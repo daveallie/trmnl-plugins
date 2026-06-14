@@ -24,3 +24,20 @@ test("loadConfig honours PORT override", () => {
 test("loadConfig throws listing all missing required vars", () => {
   assert.throws(() => loadConfig({}), /PTV_USER_ID.*PTV_API_KEY.*SERVER_SECRET/s);
 });
+
+test("loadConfig defaults redisUrl and leaves anthropicApiKey undefined", () => {
+  const cfg = loadConfig(base);
+  assert.equal(cfg.redisUrl, "redis://localhost:6379");
+  assert.equal(cfg.anthropicApiKey, undefined);
+});
+
+test("loadConfig reads ANTHROPIC_API_KEY and REDIS_URL overrides", () => {
+  const cfg = loadConfig({ ...base, ANTHROPIC_API_KEY: "sk-abc", REDIS_URL: "redis://cache:6379" });
+  assert.equal(cfg.anthropicApiKey, "sk-abc");
+  assert.equal(cfg.redisUrl, "redis://cache:6379");
+});
+
+test("loadConfig does not require the optional vars", () => {
+  // base has no ANTHROPIC_API_KEY / REDIS_URL and must not throw.
+  assert.doesNotThrow(() => loadConfig(base));
+});

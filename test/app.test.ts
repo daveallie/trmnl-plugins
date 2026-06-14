@@ -12,7 +12,7 @@ const fixture: PtvDeparturesResponse = JSON.parse(
   await readFile(new URL("./fixtures/ptv-departures.json", import.meta.url), "utf8"),
 );
 const NOW = new Date("2026-06-13T03:00:00Z");
-const config: Config = { ptvUserId: "1", ptvApiKey: "k", serverSecret: "s3cret", port: 0 };
+const config: Config = { ptvUserId: "1", ptvApiKey: "k", serverSecret: "s3cret", port: 0, redisUrl: "redis://localhost:6379" };
 
 function startApp(deps: AppDeps): Promise<{ server: Server; base: string }> {
   const app = createApp(config, deps);
