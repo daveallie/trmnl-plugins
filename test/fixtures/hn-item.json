@@ -1,0 +1,9 @@
+{
+  "id": 40002,
+  "children": [
+    { "id": 1, "author": "a", "text": "<p>This is the <b>first</b> top comment.</p>" },
+    { "id": 2, "author": "b", "text": "Second comment with <i>markup</i>." },
+    { "id": 3, "author": "c", "text": "Third comment." },
+    { "id": 4, "author": "d", "text": "Fourth comment should be dropped by the limit." }
+  ]
+}

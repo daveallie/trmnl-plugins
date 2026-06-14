@@ -1,0 +1,10 @@
+{
+  "hits": [
+    { "objectID": "40001", "title": "Show HN: I built a tiny database in Rust", "url": "https://github.com/example/tinydb", "author": "rustacean", "points": 512, "num_comments": 134, "created_at_i": 1749860000 },
+    { "objectID": "40002", "title": "The hidden cost of microservices", "url": "https://blog.example.com/microservices", "author": "architect", "points": 642, "num_comments": 201, "created_at_i": 1749850000 },
+    { "objectID": "40003", "title": "Ask HN: How do you stay productive?", "author": "curious", "points": 305, "num_comments": 410, "created_at_i": 1749845000 },
+    { "objectID": "40004", "title": "A new approach to garbage collection", "url": "https://www.research.example.edu/gc-paper", "author": "gcguru", "points": 489, "num_comments": 88, "created_at_i": 1749840000 },
+    { "objectID": "40005", "title": "Why SQLite is the database of the decade", "url": "https://sqlite.example.org/decade", "author": "dbfan", "points": 578, "num_comments": 156, "created_at_i": 1749835000 },
+    { "objectID": "40006", "title": "Low-points filler story", "url": "https://example.net/filler", "author": "nobody", "points": 12, "num_comments": 3, "created_at_i": 1749830000 }
+  ]
+}
