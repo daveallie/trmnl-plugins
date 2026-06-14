@@ -18,6 +18,13 @@ import {
   fetchHackerNewsData,
   type ArticleFetcher,
 } from "./plugins/hackernews.ts";
+import { createWeatherClient, type WeatherClient } from "./weather/client.ts";
+import {
+  createWeatherPlugin,
+  shapeForecast,
+  fetchWeatherData,
+  parseLatLon,
+} from "./plugins/weather.ts";
 import { createPreviewHandler } from "./preview.ts";
 
 export interface AppDeps {
@@ -26,6 +33,7 @@ export interface AppDeps {
   summarizer?: Summarizer;
   fetchArticle?: ArticleFetcher;
   cache?: SummaryCache;
+  weatherClient?: WeatherClient;
   now?: () => Date;
 }
 
@@ -53,9 +61,12 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
     app.use(createAuthMiddleware(config.serverSecret));
   }
 
+  const weatherClient = deps.weatherClient || createWeatherClient();
+
   const tram = createTramPlugin({ client, now });
   const hackernews = createHackerNewsPlugin({ client: hnClient, summarizer, fetchArticle, cache, now });
-  const plugins = [tram, hackernews];
+  const weather = createWeatherPlugin({ client: weatherClient, now });
+  const plugins = [tram, hackernews, weather];
   for (const plugin of plugins) {
     app.get(`/plugins${plugin.route}`, plugin.handler);
   }
@@ -110,6 +121,29 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
           );
         }
         return fetchHackerNewsData({ client: hnClient, summarizer, fetchArticle, cache, now }, now());
+      },
+    }),
+  );
+
+  const weatherFixtureUrl = new URL(
+    "../test/fixtures/open-meteo-forecast.json",
+    import.meta.url,
+  );
+  app.get(
+    "/preview/weather/:coords",
+    createPreviewHandler({
+      templateUrl: weather.templateUrl,
+      loadData: async (req): Promise<object> => {
+        if (req.query.mock) {
+          // Anchor "now" to the fixture's reference time (11:18 Melbourne local).
+          const mockNow = new Date("2026-06-14T01:18:00Z");
+          return shapeForecast(JSON.parse(await readFile(weatherFixtureUrl, "utf8")), mockNow);
+        }
+        const coords = parseLatLon(req.params.coords);
+        if (coords === null) {
+          throw new Error("invalid coordinates");
+        }
+        return fetchWeatherData(weatherClient, coords, now());
       },
     }),
   );
