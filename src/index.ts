@@ -187,7 +187,7 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
       templateUrl: briefing.templateUrl,
       loadData: async (req): Promise<object> => {
         if (req.query.mock) {
-          const mockNow = new Date("2026-06-13T03:00:00Z"); // matches the tram fixture window
+          const mockNow = new Date("2026-06-13T21:00:00Z"); // 7:00 am Melbourne June 14; shows all calendar fixtures
           const tramFixture = JSON.parse(await readFile(fixtureUrl, "utf8"));
           const wxFixture = JSON.parse(await readFile(weatherFixtureUrl, "utf8"));
           const calFixture = await readFile(
