@@ -45,6 +45,8 @@
               </div>
               <span style="font-size:10px; margin-top:2px;">{{ h.hour }}</span>
             </div>
+          {% else %}
+            <span class="label">No hourly data</span>
           {% endfor %}
         </div>
       </div>
@@ -58,6 +60,8 @@
             <span class="label" style="flex:0 0 56px;">{{ d.chance }}% rain</span>
             <span class="label" style="flex:1 1 0; text-align:right;">{{ d.high }}&deg; / {{ d.low }}&deg;</span>
           </div>
+        {% else %}
+          <span class="label">No forecast available</span>
         {% endfor %}
       </div>
     </div>
