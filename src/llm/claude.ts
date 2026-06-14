@@ -79,3 +79,53 @@ export function createClaudeSummarizer({
     }
   };
 }
+
+export type Digester = (titles: string[]) => Promise<string>;
+
+export const noopDigester: Digester = async () => "";
+
+export interface ClaudeDigesterOptions {
+  apiKey: string;
+  fetchImpl?: JsonFetchLike;
+  model?: string;
+}
+
+function buildDigestPrompt(titles: string[]): string {
+  return [
+    `Below are today's top Hacker News headlines.`,
+    `Write a 2-sentence digest (max ~220 characters total) capturing the main themes in tech today.`,
+    `Reply with only the digest, no preamble or list.`,
+    ``,
+    ...titles.map((t) => `- ${t}`),
+  ].join("\n");
+}
+
+export function createClaudeDigester({
+  apiKey,
+  fetchImpl = fetch as unknown as JsonFetchLike,
+  model = "claude-haiku-4-5",
+}: ClaudeDigesterOptions): Digester {
+  return async (titles) => {
+    if (titles.length === 0) return "";
+    try {
+      const res = await fetchImpl(ANTHROPIC_URL, {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 150,
+          messages: [{ role: "user", content: buildDigestPrompt(titles) }],
+        }),
+      });
+      if (!res.ok) return "";
+      const data = (await res.json()) as AnthropicMessage;
+      return (data.content?.[0]?.text ?? "").trim();
+    } catch {
+      return "";
+    }
+  };
+}
