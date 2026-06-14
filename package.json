@@ -14,14 +14,12 @@
     "express": "^4.21.2",
     "jsdom": "^29.1.1",
     "liquidjs": "^10.21.0",
-    "qrcode": "^1.5.4",
     "redis": "^6.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^24.0.0",
-    "@types/qrcode": "^1.5.6",
     "typescript": "^5.7.0"
   }
 }

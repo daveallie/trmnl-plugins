@@ -59,7 +59,7 @@ src/
   hn/article.ts     # fetchArticleText via @mozilla/readability + jsdom (best-effort)
   hn/types.ts       # HN Algolia response types + normalised HnStory
   llm/claude.ts     # createClaudeSummarizer (Anthropic Messages API) + noopSummarizer
-  plugins/hackernews.ts     # HN plugin: domainFromUrl/storyQrDataUrl, fetchHackerNewsData (shapes inline), createHackerNewsPlugin
+  plugins/hackernews.ts     # HN plugin: domainFromUrl, fetchHackerNewsData (shapes inline), createHackerNewsPlugin
   plugins/hackernews.liquid # hackernews TRMNL markup (full layout)
 test/               # node:test suites (*.test.ts) + fixtures/ptv-departures.json
 ```

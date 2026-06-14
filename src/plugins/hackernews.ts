@@ -1,4 +1,3 @@
-import QRCode from "qrcode";
 import type { Plugin } from "../plugin.ts";
 import type { HnClient } from "../hn/client.ts";
 import type { HnStory } from "../hn/types.ts";
@@ -19,7 +18,6 @@ export interface ShapedStory {
   comments: number;
   author: string;
   summary: string;
-  qr: string;
 }
 
 export interface HackerNewsData {
@@ -46,14 +44,6 @@ export function domainFromUrl(url: string | undefined): string {
   } catch {
     return "news.ycombinator.com";
   }
-}
-
-export function storyQrDataUrl(id: number): Promise<string> {
-  return QRCode.toDataURL(`https://news.ycombinator.com/item?id=${id}`, {
-    margin: 0,
-    scale: 2,
-    errorCorrectionLevel: "L",
-  });
 }
 
 // Best-effort, cache-aware summary for one story. Never throws.
@@ -86,7 +76,6 @@ export async function fetchHackerNewsData(deps: HackerNewsDeps, now: Date): Prom
 
   const shaped = await Promise.all(
     stories.map(async (s): Promise<ShapedStory> => {
-      const [summary, qr] = await Promise.all([summarizeStory(deps, s), storyQrDataUrl(s.id)]);
       return {
         id: s.id,
         title: s.title,
@@ -94,8 +83,7 @@ export async function fetchHackerNewsData(deps: HackerNewsDeps, now: Date): Prom
         points: s.points,
         comments: s.num_comments,
         author: s.author,
-        summary,
-        qr,
+        summary: await summarizeStory(deps, s),
       };
     }),
   );

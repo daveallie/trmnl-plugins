@@ -81,7 +81,6 @@ test("fetchHackerNewsData sorts by points, keeps the top 5, and shapes each stor
   assert.equal(top.comments, 201);
   assert.equal(top.author, "architect");
   assert.equal(top.summary, "summary of The hidden cost of microservices");
-  assert.ok(top.qr.startsWith("data:image/png;base64,"));
   // Ask HN post (no url) falls back to the HN domain.
   const askHn = data.stories.find((s) => s.title.startsWith("Ask HN"))!;
   assert.equal(askHn.domain, "news.ycombinator.com");

@@ -177,7 +177,8 @@ test("GET /preview/hackernews?mock=1 renders HTML from the fixture", async () =>
     assert.match(html, /class="trmnl"/);
     assert.match(html, /Hacker News/);
     assert.match(html, /hidden cost of microservices/);
-    assert.match(html, /data:image\/png;base64,/);
+    // metadata line is rendered (points · comments · domain · author)
+    assert.match(html, /642 pts/);
   } finally {
     server.close();
   }

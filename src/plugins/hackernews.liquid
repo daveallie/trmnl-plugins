@@ -8,19 +8,21 @@
     {% else %}
       <div style="display:flex; flex-direction:column; height:100%; width:100%;">
         {% for s in stories %}
-          <div style="flex:1 1 0; display:flex; align-items:center; gap:16px; padding:0 6px;{% unless forloop.last %} border-bottom:2px dashed #555;{% endunless %}">
-            {% comment %} Scan-to-open QR for the HN discussion {% endcomment %}
-            <div style="flex:0 0 auto; width:64px; height:64px;">
-              <img src="{{ s.qr }}" alt="QR" style="width:64px; height:64px; image-rendering:pixelated;" />
+          <div style="flex:1 1 0; display:flex; align-items:center; gap:14px; padding:0 2px;{% unless forloop.last %} border-bottom:1px solid #ccc;{% endunless %}">
+            {% comment %} Rank: a light anchor in the left gutter (replaces the old QR column) {% endcomment %}
+            <div style="flex:0 0 30px; text-align:center;">
+              <span style="font-size:30px; font-weight:700; color:#bbb; line-height:1;">{{ forloop.index }}</span>
             </div>
 
-            {% comment %} Title, AI summary, metadata {% endcomment %}
-            <div style="flex:1 1 auto; min-width:0;">
-              <span class="title title--small" style="display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.title }}</span>
+            {% comment %} Three visual tiers: bold title → muted summary → small light metadata {% endcomment %}
+            <div style="flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;">
+              <span style="font-size:21px; font-weight:700; line-height:1.1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.title }}</span>
+
               {% if s.summary != "" %}
-                <span class="label" style="display:block; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">{{ s.summary }}</span>
+                <span style="font-size:15px; font-weight:400; line-height:1.22; color:#555; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">{{ s.summary }}</span>
               {% endif %}
-              <span class="label" style="display:block; font-weight:700;">{{ s.points }} pts &middot; {{ s.comments }} comments &middot; {{ s.domain }} &middot; by {{ s.author }}</span>
+
+              <span style="font-size:13px; font-weight:400; line-height:1; color:#888; letter-spacing:0.2px;">{{ s.points }} pts &nbsp;&middot;&nbsp; {{ s.comments }} comments &nbsp;&middot;&nbsp; {{ s.domain }} &nbsp;&middot;&nbsp; {{ s.author }}</span>
             </div>
           </div>
         {% endfor %}
