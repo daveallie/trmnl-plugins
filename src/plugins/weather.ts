@@ -1,6 +1,8 @@
 import type { OpenMeteoResponse } from "../weather/types.ts";
 import { weatherCodeToIcon, type IconKey } from "../weather/icons.ts";
 import { formatTime, formatDay, formatHour12 } from "../time.ts";
+import type { WeatherClient } from "../weather/client.ts";
+import type { Plugin } from "../plugin.ts";
 
 export interface LatLon {
   latitude: number;
@@ -117,5 +119,40 @@ export function shapeForecast(data: OpenMeteoResponse, now: Date): WeatherData {
     },
     hourly,
     daily,
+  };
+}
+
+export interface WeatherPluginOptions {
+  client: WeatherClient;
+  now?: () => Date;
+}
+
+// Fetch and shape a forecast. Shared by the plugin route and the preview.
+export async function fetchWeatherData(
+  client: WeatherClient,
+  coords: LatLon,
+  now: Date,
+): Promise<WeatherData> {
+  const data = await client.getForecast(coords);
+  return shapeForecast(data, now);
+}
+
+export function createWeatherPlugin({ client, now = () => new Date() }: WeatherPluginOptions): Plugin {
+  return {
+    name: "weather",
+    route: "/weather/:coords",
+    templateUrl: new URL("./weather.liquid", import.meta.url),
+    handler: async (req, res) => {
+      const coords = parseLatLon(req.params.coords);
+      if (coords === null) {
+        res.status(400).json({ error: "invalid coordinates" });
+        return;
+      }
+      try {
+        res.json(await fetchWeatherData(client, coords, now()));
+      } catch (err) {
+        res.status(502).json({ error: (err as Error).message });
+      }
+    },
   };
 }

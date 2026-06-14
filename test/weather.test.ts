@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 import { formatTime, formatDay, formatHour12 } from "../src/time.ts";
 import { weatherCodeToIcon } from "../src/weather/icons.ts";
 import { createWeatherClient } from "../src/weather/client.ts";
-import { parseLatLon, degToCompass, shapeForecast } from "../src/plugins/weather.ts";
+import { parseLatLon, degToCompass, shapeForecast, createWeatherPlugin } from "../src/plugins/weather.ts";
+import type { WeatherData } from "../src/plugins/weather.ts";
 
 const FIXTURE = JSON.parse(
   readFileSync(new URL("./fixtures/open-meteo-forecast.json", import.meta.url), "utf8"),
@@ -130,4 +131,45 @@ test("shapeForecast builds a 7-day outlook with Today + weekdays", () => {
   assert.deepEqual(out.daily[0], { day: "Today", chance: 17, high: 13, low: 9, icon: "clear" });
   assert.deepEqual(out.daily[1], { day: "Mon", chance: 61, high: 16, low: 8, icon: "rain" });
   assert.deepEqual(out.daily[6], { day: "Sat", chance: 10, high: 18, low: 12, icon: "partly" });
+});
+
+function fakeRes() {
+  return {
+    statusCode: 200,
+    body: undefined as unknown,
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
+  };
+}
+
+const fakeClient = (data: unknown) => ({ getForecast: async () => data as never });
+
+test("weather plugin handler returns shaped JSON for valid coords", async () => {
+  const plugin = createWeatherPlugin({ client: fakeClient(FIXTURE), now: () => NOW });
+  const res = fakeRes();
+  await plugin.handler({ params: { coords: "-37.81,144.96" } } as never, res as never, () => {});
+  assert.equal(res.statusCode, 200);
+  assert.equal((res.body as WeatherData).current.temp, 12);
+  assert.equal((res.body as WeatherData).hourly.length, 12);
+});
+
+test("weather plugin handler returns 400 for invalid coords", async () => {
+  const plugin = createWeatherPlugin({ client: fakeClient(FIXTURE), now: () => NOW });
+  const res = fakeRes();
+  await plugin.handler({ params: { coords: "nope" } } as never, res as never, () => {});
+  assert.equal(res.statusCode, 400);
+});
+
+test("weather plugin handler returns 502 on upstream failure", async () => {
+  const client = { getForecast: async () => { throw new Error("boom"); } };
+  const plugin = createWeatherPlugin({ client, now: () => NOW });
+  const res = fakeRes();
+  await plugin.handler({ params: { coords: "0,0" } } as never, res as never, () => {});
+  assert.equal(res.statusCode, 502);
 });
