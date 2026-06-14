@@ -5,7 +5,7 @@
 {% capture icon_fog %}<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M6 9h10a4 4 0 0 0-8-1.5"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="5" y1="19" x2="19" y2="19"/></svg>{% endcapture %}
 {% capture icon_drizzle %}<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M7 15h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.5 3.5 0 0 0 7 15z"/><line x1="9" y1="19" x2="9" y2="21"/><line x1="15" y1="19" x2="15" y2="21"/></svg>{% endcapture %}
 {% capture icon_rain %}<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M7 14h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.5 3.5 0 0 0 7 14z"/><line x1="8" y1="18" x2="7" y2="22"/><line x1="13" y1="18" x2="12" y2="22"/><line x1="18" y1="18" x2="17" y2="22"/></svg>{% endcapture %}
-{% capture icon_snow %}<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M7 14h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.5 3.5 0 0 0 7 14z"/><line x1="8" y1="19" x2="8" y2="19"/><line x1="12" y1="21" x2="12" y2="21"/><line x1="16" y1="19" x2="16" y2="19"/></svg>{% endcapture %}
+{% capture icon_snow %}<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M7 14h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.5 3.5 0 0 0 7 14z"/><circle cx="8" cy="19" r="1" fill="#000" stroke="none"/><circle cx="12" cy="21" r="1" fill="#000" stroke="none"/><circle cx="16" cy="19" r="1" fill="#000" stroke="none"/></svg>{% endcapture %}
 {% capture icon_thunder %}<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="#000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M7 13h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.5 1.5A3.5 3.5 0 0 0 7 13z"/><path d="M12 14l-3 4h3l-1 4 4-5h-3z" fill="#000"/></svg>{% endcapture %}
 
 {% comment %} Pick a glyph by icon key {% endcomment %}
@@ -36,7 +36,7 @@
       {% comment %} Next 12 hours of rain chance {% endcomment %}
       <div>
         <span class="label" style="display:block; margin-bottom:4px;">Rain &mdash; next 12h</span>
-        <div style="display:flex; align-items:flex-end; gap:4px; height:84px;">
+        <div style="display:flex; align-items:flex-end; gap:4px; height:96px;">
           {% for h in hourly %}
             <div style="flex:1 1 0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;">
               <span style="font-size:11px;">{{ h.chance }}</span>
@@ -52,7 +52,7 @@
       {% comment %} 7-day outlook {% endcomment %}
       <div style="flex:1 1 0; display:flex; flex-direction:column;">
         {% for d in daily %}
-          <div style="flex:1 1 0; display:flex; align-items:center; gap:12px; padding:0 2px;{% unless forloop.last %} border-bottom:1px dashed #999;{% endunless %}">
+          <div style="flex:1 1 0; display:flex; align-items:center; gap:12px; padding:0 2px;{% unless forloop.last %} border-bottom:1px dashed #555;{% endunless %}">
             <span class="label" style="flex:0 0 54px; font-weight:700;">{{ d.day }}</span>
             <div style="flex:0 0 22px; height:22px;">{% case d.icon %}{% when 'clear' %}{{ icon_clear }}{% when 'partly' %}{{ icon_partly }}{% when 'fog' %}{{ icon_fog }}{% when 'drizzle' %}{{ icon_drizzle }}{% when 'rain' %}{{ icon_rain }}{% when 'snow' %}{{ icon_snow }}{% when 'thunder' %}{{ icon_thunder }}{% else %}{{ icon_cloudy }}{% endcase %}</div>
             <span class="label" style="flex:0 0 56px;">{{ d.chance }}% rain</span>
