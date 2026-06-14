@@ -1,6 +1,7 @@
-import type { RequestHandler } from "express";
 import type { PtvClient } from "../ptv/client.ts";
 import type { PtvDeparturesResponse } from "../ptv/types.ts";
+import type { Plugin } from "../plugin.ts";
+import { formatMelbourneTime } from "../time.ts";
 
 export const ROUTE_TYPE_TRAM = 1;
 export const MAX_RESULTS = 5;
@@ -19,28 +20,9 @@ export interface TramData {
   departures: ShapedDeparture[];
 }
 
-export interface Plugin {
-  name: string;
-  route: string;
-  handler: RequestHandler;
-  // Liquid template for this plugin's TRMNL view (used by the preview route).
-  templateUrl: URL;
-}
-
 export interface TramPluginOptions {
   client: PtvClient;
   now?: () => Date;
-}
-
-const timeFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "Australia/Melbourne",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
-export function formatMelbourneTime(date: Date): string {
-  return timeFormatter.format(date).toLowerCase();
 }
 
 // PTV stop ids are positive integers. Returns null for anything else.
