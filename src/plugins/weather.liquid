@@ -12,7 +12,7 @@
 {% capture current_icon %}{% case current.icon %}{% when 'clear' %}{{ icon_clear }}{% when 'partly' %}{{ icon_partly }}{% when 'fog' %}{{ icon_fog }}{% when 'drizzle' %}{{ icon_drizzle }}{% when 'rain' %}{{ icon_rain }}{% when 'snow' %}{{ icon_snow }}{% when 'thunder' %}{{ icon_thunder }}{% else %}{{ icon_cloudy }}{% endcase %}{% endcapture %}
 
 <div class="view view--full">
-  <div class="layout" style="display:flex; height:100%; gap:0;">
+  <div class="layout" style="display:flex; gap:0;">
 
     {% comment %} Left: current conditions, fills column height {% endcomment %}
     <div style="flex:0 0 244px; display:flex; flex-direction:column; padding-right:22px; border-right:3px solid #000;">

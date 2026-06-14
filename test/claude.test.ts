@@ -37,7 +37,7 @@ test("createClaudeSummarizer posts to the Anthropic API and returns the text", a
   assert.equal(captured.init.headers?.["content-type"], "application/json");
   const body = JSON.parse(captured.init.body!);
   assert.equal(body.model, "claude-haiku-4-5");
-  assert.equal(body.max_tokens, 100);
+  assert.equal(body.max_tokens, 150);
   assert.match(body.messages[0].content, /hidden cost of microservices/);
   assert.match(body.messages[0].content, /coordination costs/);
 });

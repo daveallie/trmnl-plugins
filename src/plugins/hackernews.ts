@@ -75,7 +75,7 @@ export async function fetchHackerNewsData(deps: HackerNewsDeps, now: Date): Prom
     .slice(0, MAX_STORIES);
 
   const shaped = await Promise.all(
-    stories.map(async (s): Promise<ShapedStory> => {
+    stories.map(async (s, i): Promise<ShapedStory> => {
       return {
         id: s.id,
         title: s.title,
@@ -83,7 +83,7 @@ export async function fetchHackerNewsData(deps: HackerNewsDeps, now: Date): Prom
         points: s.points,
         comments: s.num_comments,
         author: s.author,
-        summary: await summarizeStory(deps, s),
+        summary: i < 2 ? await summarizeStory(deps, s) : '',
       };
     }),
   );

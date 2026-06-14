@@ -39,9 +39,9 @@ function buildPrompt({ title, articleText, comments }: SummarizeInput): string {
     ? `Top comments:\n${comments.map((c) => `- ${c}`).join("\n")}`
     : "No comments available.";
   return [
-    `Summarize this Hacker News story in ONE concise sentence (max 140 characters).`,
+    `Summarize this Hacker News story in one to three sentences (300 characters MAX).`,
     `Capture what it is about and, if useful, the gist of the discussion.`,
-    `Reply with only the sentence, no preamble.`,
+    `Reply with only the summary, no preamble.`,
     ``,
     `Title: ${title}`,
     ``,
@@ -67,7 +67,7 @@ export function createClaudeSummarizer({
         },
         body: JSON.stringify({
           model,
-          max_tokens: 100,
+          max_tokens: 150,
           messages: [{ role: "user", content: buildPrompt(input) }],
         }),
       });

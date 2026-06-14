@@ -6,20 +6,37 @@
         <span class="label">Nothing in the last 24 hours</span>
       </div>
     {% else %}
-      {% comment %} Rows distribute evenly over the fixed height; hierarchy comes
-      from weight + size (black throughout) so it survives 1-bit dithering. {% endcomment %}
+      {% comment %} Top two stories are featured side by side with a summary in larger
+      text; the next three are title-only so the whole thing reads at a distance.
+      Hierarchy comes from weight + size (black throughout) so it survives 1-bit
+      dithering. {% endcomment %}
+      {% assign featured = stories | slice: 0, 2 %}
+      {% assign rest = stories | slice: 2, 3 %}
       <div style="display:flex; flex-direction:column; height:100%; width:100%;">
-        {% for s in stories %}
-          <div class="item" style="flex:1 1 0; min-height:0; align-items:center; overflow:hidden;{% unless forloop.last %} border-bottom:1px solid #000;{% endunless %}">
+        <div style="display:flex; flex-direction:row; flex:1 1 auto; min-height:0;{% if rest.size > 0 %} border-bottom:1px solid #000;{% endif %}">
+          {% for s in featured %}
+            <div class="item" style="flex:1 1 0; min-width:0; align-items:stretch; overflow:hidden; padding:10px;{% unless forloop.last %} border-right:1px solid #000;{% endunless %}">
+              <div class="meta" style="align-self:center;">
+                <span class="index">{{ forloop.index }}</span>
+              </div>
+              <div class="content" style="display:flex; flex-direction:column; height:100%;">
+                <span class="title" data-clamp="2">{{ s.title }}</span>
+                {% if s.summary != "" %}
+                  <span class="description description--large" data-clamp="5" style="margin-top:8px;">{{ s.summary }}</span>
+                {% endif %}
+                <span class="label label--small" style="margin-top:auto; padding-top:8px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.points }} pts &middot; {{ s.comments }} comments &middot; {{ s.domain }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% for s in rest %}
+          <div class="item" style="flex:0 0 auto; align-items:center; overflow:hidden; padding:7px 0;{% unless forloop.last %} border-bottom:1px solid #000;{% endunless %}">
             <div class="meta">
-              <span class="index">{{ forloop.index }}</span>
+              <span class="index">{{ forloop.index | plus: 2 }}</span>
             </div>
             <div class="content">
               <span class="title title--small" style="overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.title }}</span>
-              {% if s.summary != "" %}
-                <span class="description" data-clamp="2">{{ s.summary }}</span>
-              {% endif %}
-              <span class="label label--small" style="overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.points }} pts &middot; {{ s.comments }} comments &middot; {{ s.domain }} &middot; {{ s.author }}</span>
+              <span class="label label--small" style="overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.points }} pts &middot; {{ s.comments }} comments &middot; {{ s.domain }}</span>
             </div>
           </div>
         {% endfor %}

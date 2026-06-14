@@ -3,3 +3,6 @@ node_modules/
 npm-debug.log*
 .idea/
 data/
+.superpowers/
+docs/superpowers
+.claude/worktrees
