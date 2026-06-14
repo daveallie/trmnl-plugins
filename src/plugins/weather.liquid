@@ -68,11 +68,16 @@
       {% comment %} 7-day outlook, fills remaining height {% endcomment %}
       <div style="flex:1 1 0; display:flex; flex-direction:column; margin-top:14px; border-top:3px solid #000;">
         {% for d in daily %}
-          <div style="flex:1 1 0; display:flex; align-items:center; gap:14px;{% unless forloop.last %} border-bottom:1px solid #000;{% endunless %}">
+          <div style="flex:1 1 0; display:flex; align-items:center; gap:12px;{% unless forloop.last %} border-bottom:1px solid #000;{% endunless %}">
+            <div style="flex:0 0 28px; height:28px;">{% case d.icon %}{% when 'clear' %}{{ icon_clear }}{% when 'partly' %}{{ icon_partly }}{% when 'fog' %}{{ icon_fog }}{% when 'drizzle' %}{{ icon_drizzle }}{% when 'rain' %}{{ icon_rain }}{% when 'snow' %}{{ icon_snow }}{% when 'thunder' %}{{ icon_thunder }}{% else %}{{ icon_cloudy }}{% endcase %}</div>
             <span class="value value--small" style="flex:0 0 52px;">{{ d.day }}</span>
-            <div style="flex:0 0 26px; height:26px;">{% case d.icon %}{% when 'clear' %}{{ icon_clear }}{% when 'partly' %}{{ icon_partly }}{% when 'fog' %}{{ icon_fog }}{% when 'drizzle' %}{{ icon_drizzle }}{% when 'rain' %}{{ icon_rain }}{% when 'snow' %}{{ icon_snow }}{% when 'thunder' %}{{ icon_thunder }}{% else %}{{ icon_cloudy }}{% endcase %}</div>
-            <span class="value value--small" style="flex:0 0 88px; white-space:nowrap;">{{ d.chance }}%<span class="label" style="margin-left:4px;">rain</span></span>
-            <span class="value value--small" style="flex:1 1 0; text-align:right; white-space:nowrap;">{{ d.high }}&deg; <span class="label">/</span> {{ d.low }}&deg;</span>
+            <span class="value value--small" style="flex:0 0 50px; text-align:right;">{{ d.chance }}%</span>
+            <span class="label" style="flex:0 0 auto;">rain</span>
+            <span class="value value--small" style="flex:1 1 0; text-align:right; white-space:nowrap;">
+              <span style="display:inline-block; width:46px; text-align:right;">{{ d.low }}&deg;</span>
+              <span class="label"> / </span>
+              <span style="display:inline-block; width:46px; text-align:right;">{{ d.high }}&deg;</span>
+            </span>
           </div>
         {% else %}
           <span class="label">No forecast available</span>
