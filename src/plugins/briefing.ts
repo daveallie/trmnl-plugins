@@ -9,7 +9,7 @@ import type { SummaryCache } from "../cache.ts";
 import { fetchTramData, parseStopId } from "./tram.ts";
 import { fetchWeatherData, parseLatLon, type LatLon, type WeatherData } from "./weather.ts";
 import { parseAgenda, type ShapedEvent } from "../calendar/parse.ts";
-import { formatMelbourneTime, melbourneHour, formatLongDate } from "../time.ts";
+import { formatMelbourneTime, formatLongDate } from "../time.ts";
 
 const MAX_TRAMS = 3;
 const NEWS_WINDOW_SECONDS = 24 * 60 * 60;
@@ -29,11 +29,10 @@ export interface BriefingWeather {
 
 export interface BriefingTram {
   stopName: string;
-  departures: { route: string; destination: string; time: string }[];
+  departures: { route: string; time: string }[];
 }
 
 export interface BriefingData {
-  greeting: string;
   date: string;
   updated_at: string;
   tram: BriefingTram | null;
@@ -67,20 +66,12 @@ export function weatherHighlights(w: WeatherData): BriefingWeather {
   };
 }
 
-export function buildGreeting(now: Date): string {
-  const h = melbourneHour(now);
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}
-
 async function loadTram(deps: BriefingDeps, now: Date): Promise<BriefingTram> {
   const data = await fetchTramData(deps.ptvClient, deps.stop, now);
   return {
     stopName: data.stop_name,
     departures: data.departures.slice(0, MAX_TRAMS).map((d) => ({
       route: d.route,
-      destination: d.destination,
       time: d.time,
     })),
   };
@@ -125,7 +116,6 @@ export async function fetchBriefingData(deps: BriefingDeps, now: Date): Promise<
     settle(loadNews(deps, now)),
   ]);
   return {
-    greeting: buildGreeting(now),
     date: formatLongDate(now),
     updated_at: formatMelbourneTime(now),
     tram,

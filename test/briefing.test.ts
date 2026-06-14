@@ -4,7 +4,6 @@ import { readFile } from "node:fs/promises";
 import type { Request, Response, NextFunction } from "express";
 import {
   weatherHighlights,
-  buildGreeting,
   fetchBriefingData,
   createBriefingPlugin,
   type BriefingDeps,
@@ -59,15 +58,8 @@ test("weatherHighlights projects the fields the briefing needs", () => {
   assert.match(wx.sunset, /am|pm/);
 });
 
-test("buildGreeting varies by Melbourne hour", () => {
-  assert.equal(buildGreeting(new Date("2026-06-13T22:00:00Z")), "Good morning"); // 08:00 local
-  assert.equal(buildGreeting(new Date("2026-06-14T04:00:00Z")), "Good afternoon"); // 14:00 local
-  assert.equal(buildGreeting(new Date("2026-06-14T10:00:00Z")), "Good evening"); // 20:00 local
-});
-
 test("fetchBriefingData populates every section on the happy path", async () => {
   const data = await fetchBriefingData(makeDeps({ now: () => TRAM_NOW }), TRAM_NOW);
-  assert.ok(data.greeting.startsWith("Good"));
   assert.match(data.date, /June/);
   assert.ok(data.tram && data.tram.departures.length > 0 && data.tram.departures.length <= 3);
   assert.ok(data.tram!.departures[0]!.time.match(/am|pm/));
@@ -120,7 +112,7 @@ test("handler returns 400 for missing stop/coords and 200 with body otherwise", 
     noop,
   );
   assert.equal(rec2.recorded.statusCode, 200);
-  assert.ok((rec2.recorded.body as BriefingData).greeting);
+  assert.ok((rec2.recorded.body as BriefingData).date);
 });
 
 function mockRes() {
