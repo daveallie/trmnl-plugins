@@ -11,8 +11,8 @@
 {% comment %} Map an icon key to its glyph {% endcomment %}
 {% capture current_icon %}{% case current.icon %}{% when 'clear' %}{{ icon_clear }}{% when 'partly' %}{{ icon_partly }}{% when 'fog' %}{{ icon_fog }}{% when 'drizzle' %}{{ icon_drizzle }}{% when 'rain' %}{{ icon_rain }}{% when 'snow' %}{{ icon_snow }}{% when 'thunder' %}{{ icon_thunder }}{% else %}{{ icon_cloudy }}{% endcase %}{% endcapture %}
 
-<div class="view view--full" style="display:flex; flex-direction:column; height:100%;">
-  <div class="layout" style="display:flex; flex:1 1 0; min-height:0; gap:0;">
+<div class="view view--full">
+  <div class="layout" style="display:flex; height:100%; gap:0;">
 
     {% comment %} Left: current conditions, fills column height {% endcomment %}
     <div style="flex:0 0 244px; display:flex; flex-direction:column; padding-right:22px; border-right:3px solid #000;">
@@ -24,7 +24,7 @@
       </div>
       <span class="title title--small" style="margin-top:6px;">{{ current.label }}</span>
 
-      <div style="margin-top:auto; display:flex; flex-direction:column; gap:14px;">
+      <div style="margin-top:34px; display:flex; flex-direction:column; gap:14px;">
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
           <span class="label">Feels like</span>
           <span class="value value--small">{{ current.feelsLike }}&deg;</span>
@@ -70,8 +70,8 @@
         {% for d in daily %}
           <div style="flex:1 1 0; display:flex; align-items:center; gap:12px;{% unless forloop.last %} border-bottom:1px solid #000;{% endunless %}">
             <div style="flex:0 0 28px; height:28px;">{% case d.icon %}{% when 'clear' %}{{ icon_clear }}{% when 'partly' %}{{ icon_partly }}{% when 'fog' %}{{ icon_fog }}{% when 'drizzle' %}{{ icon_drizzle }}{% when 'rain' %}{{ icon_rain }}{% when 'snow' %}{{ icon_snow }}{% when 'thunder' %}{{ icon_thunder }}{% else %}{{ icon_cloudy }}{% endcase %}</div>
-            <span class="value value--small" style="flex:0 0 52px;">{{ d.day }}</span>
-            <span class="value value--small" style="flex:0 0 50px; text-align:right;">{{ d.chance }}%</span>
+            <span class="value value--small" style="flex:0 0 68px;">{{ d.day }}</span>
+            <span class="value value--small" style="flex:0 0 48px; text-align:right;">{{ d.chance }}%</span>
             <span class="label" style="flex:0 0 auto;">rain</span>
             <span class="value value--small" style="flex:1 1 0; text-align:right; white-space:nowrap;">
               <span style="display:inline-block; width:46px; text-align:right;">{{ d.low }}&deg;</span>
