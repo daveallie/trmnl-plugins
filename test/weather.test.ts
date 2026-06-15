@@ -118,12 +118,15 @@ test("shapeForecast shapes current conditions", () => {
   assert.equal(out.sunset, "5:07 pm");
 });
 
-test("shapeForecast slices the next 12 hours of rain chance from now", () => {
+test("shapeForecast slices up to the next 24 hours of rain chance from now", () => {
   const out = shapeForecast(FIXTURE, NOW);
-  assert.equal(out.hourly.length, 12);
+  // The fixture only carries data through 23:00, so from an 11AM "now" there
+  // are 13 hourly buckets available (fewer than the 24-hour cap).
+  assert.equal(out.hourly.length, 13);
   assert.deepEqual(out.hourly[0], { hour: "11AM", chance: 30 });
   assert.deepEqual(out.hourly[3], { hour: "2PM", chance: 60 });
   assert.deepEqual(out.hourly[11], { hour: "10PM", chance: 5 });
+  assert.deepEqual(out.hourly[12], { hour: "11PM", chance: 10 });
 });
 
 test("shapeForecast builds a 7-day outlook with Today + weekdays", () => {
@@ -157,7 +160,7 @@ test("weather plugin handler returns shaped JSON for valid coords", async () => 
   await plugin.handler({ params: { coords: "-37.81,144.96" } } as never, res as never, () => {});
   assert.equal(res.statusCode, 200);
   assert.equal((res.body as WeatherData).current.temp, 12);
-  assert.equal((res.body as WeatherData).hourly.length, 12);
+  assert.equal((res.body as WeatherData).hourly.length, 13);
 });
 
 test("weather plugin handler returns 400 for invalid coords", async () => {

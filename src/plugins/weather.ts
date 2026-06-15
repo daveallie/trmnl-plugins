@@ -60,7 +60,7 @@ export interface WeatherData {
   daily: DailyOutlook[];
 }
 
-const HOURS_AHEAD = 12;
+const HOURS_AHEAD = 24;
 
 // Interpret a location-local naive ISO string ("2026-06-14T11:00") as a Date
 // whose UTC fields equal the local wall clock. Lets us format/compare local

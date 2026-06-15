@@ -47,17 +47,18 @@
     {% comment %} Right: rain timeline + 7-day outlook {% endcomment %}
     <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; padding-left:22px;">
 
-      {% comment %} Next 12 hours of rain chance {% endcomment %}
+      {% comment %} Next 24 hours of rain chance {% endcomment %}
       <div style="flex:0 0 auto;">
-        <span class="label label--small" style="display:block; margin-bottom:6px; font-weight:700;">CHANCE OF RAIN &middot; NEXT 12H</span>
-        <div style="display:flex; align-items:flex-end; gap:5px;">
+        <span class="label label--small" style="display:block; margin-bottom:6px; font-weight:700;">CHANCE OF RAIN &middot; NEXT 24H</span>
+        <div style="display:flex; align-items:flex-end; gap:3px;">
           {% for h in hourly %}
-            <div style="flex:1 1 0; display:flex; flex-direction:column; align-items:center;">
-              <span style="font-size:13px; line-height:1; margin-bottom:3px;">{{ h.chance }}</span>
+            {% assign hour_mod = forloop.index0 | modulo: 3 %}
+            <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center;">
+              <span style="font-size:11px; line-height:1; margin-bottom:3px;">{{ h.chance }}</span>
               <div style="position:relative; width:100%; height:60px; border:1.5px solid #000; border-radius:2px;">
                 <div style="position:absolute; left:0; right:0; bottom:0; height:{{ h.chance }}%; background:#000;"></div>
               </div>
-              <span style="font-size:11px; line-height:1; margin-top:4px;">{{ h.hour }}</span>
+              <span style="height:11px; line-height:1; margin-top:4px; font-size:11px; white-space:nowrap; text-align:center;">{% if hour_mod == 0 %}{{ h.hour }}{% endif %}</span>
             </div>
           {% else %}
             <span class="label">No hourly data</span>

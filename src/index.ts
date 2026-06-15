@@ -170,7 +170,7 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
       loadData: async (req): Promise<object> => {
         if (req.query.mock) {
           // Anchor "now" to the fixture's reference time (11:18 Melbourne local).
-          const mockNow = new Date("2026-06-13T13:18:00Z");
+          const mockNow = new Date("2026-06-14T01:18:00Z");
           return shapeForecast(JSON.parse(await readFile(weatherFixtureUrl, "utf8")), mockNow);
         }
         const coords = parseLatLon(req.params.coords);
