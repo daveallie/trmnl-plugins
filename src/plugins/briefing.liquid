@@ -6,7 +6,7 @@
       <div style="flex:1.2 1 0; min-width:0; box-sizing:border-box; padding-right:20px; border-right:3px solid #000; display:flex; flex-direction:column;">
         <span class="label label--small font--bold" style="display:block; margin-bottom:10px;">TODAY'S NEWS</span>
         {% if news %}
-          <span class="description description--xlarge" data-clamp="15" style="display:block;">{{ news.digest }}</span>
+          <span class="description description--xlarge" style="display:block;">{{ news.digest }}</span>
         {% else %}
           <span class="label">News unavailable</span>
         {% endif %}

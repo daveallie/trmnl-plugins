@@ -41,6 +41,7 @@ function buildPrompt({ title, articleText, comments }: SummarizeInput): string {
   return [
     `Summarize this Hacker News story in one to three sentences (300 characters MAX).`,
     `Capture what it is about and, if useful, the gist of the discussion.`,
+    `Wrap the one or two most important words or short phrases in **double asterisks** to emphasise them; don't over-use it.`,
     `Reply with only the summary, no preamble.`,
     ``,
     `Title: ${title}`,
@@ -93,7 +94,8 @@ export interface ClaudeDigesterOptions {
 function buildDigestPrompt(titles: string[]): string {
   return [
     `Below are today's top news headlines — a mix of world/general news and tech.`,
-    `Write a few sentence digest (max ~550 characters total) capturing the main themes in the news today.`,
+    `Write a few sentence digest (500 characters MAX) capturing the main themes in the news today.`,
+    `Wrap  most important words or short phrases in **double asterisks** to emphasise them; don't over-use it, 5 times at most.`,
     `Reply with only the digest, no preamble or list.`,
     ``,
     ...titles.map((t) => `- ${t}`),

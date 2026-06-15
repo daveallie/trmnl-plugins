@@ -146,7 +146,7 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
           return fetchHackerNewsData(
             {
               client: mockClient,
-              summarizer: async ({ title }) => `A concise summary of "${title}".`,
+              summarizer: async ({ title }) => `A **concise summary** of "${title}".`,
               fetchArticle: async () => "",
               cache: createMemoryCache(),
               now: () => mockNow,
@@ -170,7 +170,7 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
       loadData: async (req): Promise<object> => {
         if (req.query.mock) {
           // Anchor "now" to the fixture's reference time (11:18 Melbourne local).
-          const mockNow = new Date("2026-06-14T01:18:00Z");
+          const mockNow = new Date("2026-06-13T13:18:00Z");
           return shapeForecast(JSON.parse(await readFile(weatherFixtureUrl, "utf8")), mockNow);
         }
         const coords = parseLatLon(req.params.coords);
@@ -210,7 +210,7 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
             },
             newsFeeds: ["mock-abc", "mock-bbc"],
             digester: async () =>
-              "World leaders gathered for a climate summit as markets rallied on cooling inflation, while AI labs raced to ship autonomous agents and a chip startup claimed a 3x efficiency win.",
+              "World leaders gathered for a **climate summit** as markets rallied on **cooling inflation**, while AI labs raced to ship **autonomous agents** and a chip startup claimed a 3x efficiency win.",
             digestCache: createMemoryCache(),
             stop: 1,
             coords: { latitude: -37.81, longitude: 144.96 },

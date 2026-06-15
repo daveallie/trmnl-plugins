@@ -9,6 +9,7 @@ import type { SummaryCache } from "../cache.ts";
 import { fetchTramData, parseStopId } from "./tram.ts";
 import { fetchWeatherData, parseLatLon, type LatLon, type WeatherData } from "./weather.ts";
 import { formatMelbourneTime, formatLongDate } from "../time.ts";
+import { emphasize } from "../emphasis.ts";
 
 const MAX_TRAMS = 3;
 const NEWS_WINDOW_SECONDS = 24 * 60 * 60;
@@ -130,7 +131,7 @@ export async function fetchBriefingData(deps: BriefingDeps, now: Date): Promise<
     updated_at: formatMelbourneTime(now),
     tram,
     weather,
-    news: news && news.digest ? news : null,
+    news: news && news.digest ? { digest: emphasize(news.digest) } : null,
   };
 }
 

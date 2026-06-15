@@ -27,6 +27,9 @@ function renderPage(inner: string): string {
   <div class="trmnl">
     <div class="screen">${inner}</div>
   </div>
+  <!-- Modulation engines (data-clamp, data-overflow, data-value-fit, …) are JS,
+       not CSS — without this the data-* attributes silently no-op. -->
+  <script src="https://trmnl.com/js/latest/plugins.js"></script>
 </body>
 </html>`;
 }

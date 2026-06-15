@@ -4,6 +4,7 @@ import type { HnStory } from "../hn/types.ts";
 import type { Summarizer } from "../llm/claude.ts";
 import type { SummaryCache } from "../cache.ts";
 import { formatMelbourneTime } from "../time.ts";
+import { emphasize } from "../emphasis.ts";
 
 export const MAX_STORIES = 5;
 export const SEARCH_HITS = 30;
@@ -83,7 +84,7 @@ export async function fetchHackerNewsData(deps: HackerNewsDeps, now: Date): Prom
         points: s.points,
         comments: s.num_comments,
         author: s.author,
-        summary: i < 2 ? await summarizeStory(deps, s) : '',
+        summary: i < 2 ? emphasize(await summarizeStory(deps, s)) : '',
       };
     }),
   );

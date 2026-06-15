@@ -22,7 +22,13 @@
               <div class="content" style="display:flex; flex-direction:column; height:100%;">
                 <span class="title" data-clamp="2">{{ s.title }}</span>
                 {% if s.summary != "" %}
-                  <span class="description description--large" style="margin-top:8px;">{{ s.summary }}</span>
+                  {% comment %} Adopt the font treatment description--xlarge uses (always Inter, the
+                  readable "Today's News" font) instead of the bitmap font description--large falls
+                  back to on TRMNL/classic bundles. We override the weight too: description--large
+                  pins wght 700 to pair with its single-weight bitmap font, which would make the whole
+                  Inter summary bold — xlarge's lighter weight keeps the base regular so only the
+                  **emphasis** spans (wght 700, set in emphasize()) stand out. Size stays --large. {% endcomment %}
+                  <span class="description description--large" style="margin-top:8px; font-family:var(--description-xlarge-font-family); font-weight:var(--description-xlarge-font-weight); font-variation-settings:'wght' var(--description-xlarge-font-weight); -webkit-font-smoothing:var(--description-xlarge-font-smoothing);">{{ s.summary }}</span>
                 {% endif %}
                 <span class="label label--small" style="margin-top:auto; padding-top:8px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">{{ s.points }} pts &middot; {{ s.comments }} comments &middot; {{ s.domain }}</span>
               </div>
