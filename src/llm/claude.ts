@@ -93,7 +93,7 @@ export interface ClaudeDigesterOptions {
 function buildDigestPrompt(titles: string[]): string {
   return [
     `Below are today's top news headlines — a mix of world/general news and tech.`,
-    `Write a 2-sentence digest (max ~220 characters total) capturing the main themes in the news today.`,
+    `Write a few sentence digest (max ~550 characters total) capturing the main themes in the news today.`,
     `Reply with only the digest, no preamble or list.`,
     ``,
     ...titles.map((t) => `- ${t}`),
