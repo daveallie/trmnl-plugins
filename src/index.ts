@@ -32,10 +32,11 @@ import {
   fetchWeatherData,
   parseLatLon,
 } from "./plugins/weather.ts";
-import { createCalendarClient, type CalendarClient } from "./calendar/client.ts";
+import { createNewsClient, type NewsClient } from "./news/client.ts";
 import {
   createBriefingPlugin,
   fetchBriefingData,
+  DEFAULT_NEWS_FEEDS,
   type BriefingDeps,
 } from "./plugins/briefing.ts";
 import { createPreviewHandler } from "./preview.ts";
@@ -48,7 +49,7 @@ export interface AppDeps {
   cache?: SummaryCache;
   weatherClient?: WeatherClient;
   digester?: Digester;
-  calendarClient?: CalendarClient;
+  newsClient?: NewsClient;
   digestCache?: SummaryCache;
   now?: () => Date;
 }
@@ -68,8 +69,7 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
   const digester =
     deps.digester ||
     (config.anthropicApiKey ? createClaudeDigester({ apiKey: config.anthropicApiKey }) : noopDigester);
-  const calendarClient =
-    deps.calendarClient || createCalendarClient({ icsUrls: config.briefingIcsUrls });
+  const newsClient = deps.newsClient || createNewsClient();
   const digestCache =
     deps.digestCache ||
     createRedisCache({ url: config.redisUrl, keyPrefix: "briefing:digest:", ttlSeconds: 60 * 60 });
@@ -94,7 +94,8 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
     ptvClient: client,
     weatherClient,
     hnClient,
-    calendarClient,
+    newsClient,
+    newsFeeds: DEFAULT_NEWS_FEEDS,
     digester,
     digestCache,
     now,
@@ -187,13 +188,9 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
       templateUrl: briefing.templateUrl,
       loadData: async (req): Promise<object> => {
         if (req.query.mock) {
-          const mockNow = new Date("2026-06-13T21:00:00Z"); // 7:00 am Melbourne June 14; shows all calendar fixtures
+          const mockNow = new Date("2026-06-13T21:00:00Z"); // 7:00 am Melbourne June 14
           const tramFixture = JSON.parse(await readFile(fixtureUrl, "utf8"));
           const wxFixture = JSON.parse(await readFile(weatherFixtureUrl, "utf8"));
-          const calFixture = await readFile(
-            new URL("../test/fixtures/briefing-calendar.ics", import.meta.url),
-            "utf8",
-          );
           const mockDeps: BriefingDeps = {
             ptvClient: { async getDepartures() { return tramFixture; } },
             weatherClient: { async getForecast() { return wxFixture; } },
@@ -206,12 +203,14 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
               },
               async getTopComments() { return []; },
             },
-            calendarClient: createCalendarClient({
-              icsUrls: ["mock"],
-              fetchImpl: async () => ({ ok: true, async text() { return calFixture; } }),
-            }),
+            newsClient: {
+              async getHeadlines() {
+                return ["World leaders meet for climate summit", "Markets rally as inflation cools"];
+              },
+            },
+            newsFeeds: ["mock-abc", "mock-bbc"],
             digester: async () =>
-              "AI labs race to ship autonomous agents as a new chip startup claims a 3x efficiency win. Debate continues over open-weights safety.",
+              "World leaders gathered for a climate summit as markets rallied on cooling inflation, while AI labs raced to ship autonomous agents and a chip startup claimed a 3x efficiency win.",
             digestCache: createMemoryCache(),
             stop: 1,
             coords: { latitude: -37.81, longitude: 144.96 },
@@ -223,7 +222,7 @@ export function createApp(config: Config, deps: AppDeps = {}): Express {
         const coords = parseLatLon(typeof req.query.coords === "string" ? req.query.coords : undefined);
         if (stop === null || coords === null) throw new Error("missing or invalid stop/coords");
         return fetchBriefingData(
-          { ptvClient: client, weatherClient, hnClient, calendarClient, digester, digestCache, stop, coords, now },
+          { ptvClient: client, weatherClient, hnClient, newsClient, newsFeeds: DEFAULT_NEWS_FEEDS, digester, digestCache, stop, coords, now },
           now(),
         );
       },

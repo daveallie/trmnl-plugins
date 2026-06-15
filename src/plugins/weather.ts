@@ -40,6 +40,7 @@ export interface DailyOutlook {
   chance: number;
   high: number;
   low: number;
+  rain: number;
   icon: IconKey;
 }
 
@@ -98,6 +99,7 @@ export function shapeForecast(data: OpenMeteoResponse, now: Date): WeatherData {
       chance: data.daily.precipitation_probability_max[i] ?? 0,
       high: Math.round(data.daily.temperature_2m_max[i] ?? 0),
       low: Math.round(data.daily.temperature_2m_min[i] ?? 0),
+      rain: Math.round((data.daily.precipitation_sum[i] ?? 0) * 10) / 10,
       icon: weatherCodeToIcon(data.daily.weather_code[i] ?? -1).icon,
     };
   });

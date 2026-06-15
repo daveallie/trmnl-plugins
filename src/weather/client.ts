@@ -27,7 +27,7 @@ const CURRENT_FIELDS =
   "temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m";
 const HOURLY_FIELDS = "precipitation_probability";
 const DAILY_FIELDS =
-  "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset";
+  "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset";
 
 export function createWeatherClient({ fetchImpl = fetch }: WeatherClientOptions = {}): WeatherClient {
   async function getForecast({ latitude, longitude }: ForecastQuery): Promise<OpenMeteoResponse> {

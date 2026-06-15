@@ -67,6 +67,7 @@ test("getForecast builds the Open-Meteo URL with coords, fields, timezone and da
   assert.match(calledUrl, /current=temperature_2m/);
   assert.match(calledUrl, /hourly=precipitation_probability/);
   assert.match(calledUrl, /daily=weather_code/);
+  assert.match(calledUrl, /precipitation_sum/);
 });
 
 test("getForecast throws on a non-ok response", async () => {
@@ -128,9 +129,9 @@ test("shapeForecast slices the next 12 hours of rain chance from now", () => {
 test("shapeForecast builds a 7-day outlook with Today + weekdays", () => {
   const out = shapeForecast(FIXTURE, NOW);
   assert.equal(out.daily.length, 7);
-  assert.deepEqual(out.daily[0], { day: "Today", chance: 17, high: 13, low: 9, icon: "clear" });
-  assert.deepEqual(out.daily[1], { day: "Mon", chance: 61, high: 16, low: 8, icon: "rain" });
-  assert.deepEqual(out.daily[6], { day: "Sat", chance: 10, high: 18, low: 12, icon: "partly" });
+  assert.deepEqual(out.daily[0], { day: "Today", chance: 17, high: 13, low: 9, rain: 0, icon: "clear" });
+  assert.deepEqual(out.daily[1], { day: "Mon", chance: 61, high: 16, low: 8, rain: 8.2, icon: "rain" });
+  assert.deepEqual(out.daily[6], { day: "Sat", chance: 10, high: 18, low: 12, rain: 0, icon: "partly" });
 });
 
 function fakeRes() {

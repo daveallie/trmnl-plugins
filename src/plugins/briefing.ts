@@ -3,19 +3,25 @@ import type { Plugin } from "../plugin.ts";
 import type { PtvClient } from "../ptv/client.ts";
 import type { WeatherClient } from "../weather/client.ts";
 import type { HnClient } from "../hn/client.ts";
-import type { CalendarClient } from "../calendar/client.ts";
+import type { NewsClient } from "../news/client.ts";
 import type { Digester } from "../llm/claude.ts";
 import type { SummaryCache } from "../cache.ts";
 import { fetchTramData, parseStopId } from "./tram.ts";
 import { fetchWeatherData, parseLatLon, type LatLon, type WeatherData } from "./weather.ts";
-import { parseAgenda, type ShapedEvent } from "../calendar/parse.ts";
 import { formatMelbourneTime, formatLongDate } from "../time.ts";
 
 const MAX_TRAMS = 3;
 const NEWS_WINDOW_SECONDS = 24 * 60 * 60;
 const NEWS_HITS = 30;
 const NEWS_TITLES = 8;
+const FEED_HEADLINES = 8;
 const DIGEST_CACHE_KEY = 0;
+
+// General/world news RSS feeds blended with HN into the news digest.
+export const DEFAULT_NEWS_FEEDS = [
+  "https://www.abc.net.au/news/feed/51120/rss.xml", // ABC News (AU) — Just In
+  "https://feeds.bbci.co.uk/news/world/rss.xml", // BBC News — World
+];
 
 export interface BriefingWeather {
   temp: number;
@@ -23,6 +29,7 @@ export interface BriefingWeather {
   high: number;
   low: number;
   rainChance: number;
+  rainMm: number;
   sunrise: string;
   sunset: string;
 }
@@ -37,7 +44,6 @@ export interface BriefingData {
   updated_at: string;
   tram: BriefingTram | null;
   weather: BriefingWeather | null;
-  agenda: { events: ShapedEvent[] } | null;
   news: { digest: string } | null;
 }
 
@@ -45,7 +51,8 @@ export interface BriefingDeps {
   ptvClient: PtvClient;
   weatherClient: WeatherClient;
   hnClient: HnClient;
-  calendarClient: CalendarClient;
+  newsClient: NewsClient;
+  newsFeeds: string[];
   digester: Digester;
   digestCache: SummaryCache;
   stop: number;
@@ -61,6 +68,7 @@ export function weatherHighlights(w: WeatherData): BriefingWeather {
     high: today?.high ?? 0,
     low: today?.low ?? 0,
     rainChance: today?.chance ?? 0,
+    rainMm: today?.rain ?? 0,
     sunrise: w.sunrise,
     sunset: w.sunset,
   };
@@ -81,20 +89,23 @@ async function loadWeather(deps: BriefingDeps, now: Date): Promise<BriefingWeath
   return weatherHighlights(await fetchWeatherData(deps.weatherClient, deps.coords, now));
 }
 
-async function loadAgenda(deps: BriefingDeps, now: Date): Promise<{ events: ShapedEvent[] }> {
-  const texts = await deps.calendarClient.getIcsTexts();
-  return { events: parseAgenda(texts, now) };
-}
-
 async function loadNews(deps: BriefingDeps, now: Date): Promise<{ digest: string }> {
   const cached = await deps.digestCache.get(DIGEST_CACHE_KEY);
   if (cached !== null) return { digest: cached };
   const since = Math.floor(now.getTime() / 1000) - NEWS_WINDOW_SECONDS;
-  const stories = (await deps.hnClient.getTopStories({ since, hitsPerPage: NEWS_HITS }))
+  // Blend general/world headlines (RSS feeds) with top HN stories. Each source
+  // is fetched independently so one failing feed doesn't sink the digest.
+  const [hnStories, ...feedResults] = await Promise.all([
+    settle(deps.hnClient.getTopStories({ since, hitsPerPage: NEWS_HITS })),
+    ...deps.newsFeeds.map((url) => settle(deps.newsClient.getHeadlines(url))),
+  ]);
+  const techTitles = (hnStories ?? [])
     .slice()
     .sort((a, b) => b.points - a.points)
-    .slice(0, NEWS_TITLES);
-  const digest = await deps.digester(stories.map((s) => s.title));
+    .slice(0, NEWS_TITLES)
+    .map((s) => s.title);
+  const worldTitles = feedResults.flatMap((titles) => (titles ?? []).slice(0, FEED_HEADLINES));
+  const digest = await deps.digester([...worldTitles, ...techTitles]);
   if (digest) await deps.digestCache.set(DIGEST_CACHE_KEY, digest);
   return { digest };
 }
@@ -109,10 +120,9 @@ async function settle<T>(p: Promise<T>): Promise<T | null> {
 }
 
 export async function fetchBriefingData(deps: BriefingDeps, now: Date): Promise<BriefingData> {
-  const [tram, weather, agenda, news] = await Promise.all([
+  const [tram, weather, news] = await Promise.all([
     settle(loadTram(deps, now)),
     settle(loadWeather(deps, now)),
-    settle(loadAgenda(deps, now)),
     settle(loadNews(deps, now)),
   ]);
   return {
@@ -120,7 +130,6 @@ export async function fetchBriefingData(deps: BriefingDeps, now: Date): Promise<
     updated_at: formatMelbourneTime(now),
     tram,
     weather,
-    agenda,
     news: news && news.digest ? news : null,
   };
 }

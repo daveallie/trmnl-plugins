@@ -10,7 +10,7 @@ that TRMNL renders with a Liquid template configured in the TRMNL dashboard. The
 server is built to host multiple plugins over time, distinguished by URL path.
 
 Plugins: **tram** (PTV tram departures), **hackernews** (AI-summarised HN stories),
-**weather** (rain-focused forecast), **briefing** (daily agenda + weather + trams + HN digest).
+**weather** (rain-focused forecast), **briefing** (weather + trams + blended world/tech news digest).
 
 ## Runtime model — important
 
@@ -60,13 +60,14 @@ src/
   hn/client.ts      # createHnClient: getTopStories (Algolia search), getTopComments
   hn/article.ts     # fetchArticleText via @mozilla/readability + jsdom (best-effort)
   hn/types.ts       # HN Algolia response types + normalised HnStory
-  llm/claude.ts     # createClaudeSummarizer (Anthropic Messages API) + noopSummarizer
+  llm/claude.ts     # createClaudeSummarizer + createClaudeDigester (Anthropic Messages API) + noop variants
+  news/client.ts    # createNewsClient: fetch + parse RSS feed item titles (parseRssTitles); blended into the briefing digest
   plugins/hackernews.ts     # HN plugin: domainFromUrl, fetchHackerNewsData (shapes inline), createHackerNewsPlugin
   plugins/hackernews.liquid # hackernews TRMNL markup (full layout)
-  plugins/briefing.ts       # aggregates tram + weather + calendar agenda + HN news digest (graceful per-section degradation); fetchBriefingData, weatherHighlights, createBriefingPlugin
-  plugins/briefing.liquid   # briefing TRMNL markup (Layout A: calendar left, weather+trams right, news strip)
-  calendar/client.ts        # createCalendarClient: fetch secret iCal URLs (Promise.allSettled)
-  calendar/parse.ts         # parseAgenda: expand today's Melbourne events from ICS (via ical-expander)
+  plugins/briefing.ts       # aggregates tram + weather + news digest (HN + RSS feeds blended); DEFAULT_NEWS_FEEDS, fetchBriefingData, weatherHighlights, createBriefingPlugin (graceful per-section degradation)
+  plugins/briefing.liquid   # briefing TRMNL markup (news digest left, weather + trams right)
+  calendar/client.ts        # createCalendarClient: fetch secret iCal URLs (retained; no longer wired into briefing)
+  calendar/parse.ts         # parseAgenda: expand today's Melbourne events from ICS (retained; no longer wired into briefing)
   calendar/ical-expander.d.ts # ambient types for the untyped ical-expander package
 test/               # node:test suites (*.test.ts) + fixtures/ptv-departures.json
 ```
@@ -125,11 +126,11 @@ required; `PORT` defaults to 8080. They live in `.env` (gitignored, never commit
 `config.ts` validates the required ones at startup and throws if any are missing.
 
 `ANTHROPIC_API_KEY` (optional — enables the hackernews plugin's AI summaries and the
-briefing plugin's news digest; without it those sections render summary-less/omitted),
-`REDIS_URL` (optional — defaults to `redis://localhost:6379`, set to
-`redis://redis:6379` in docker-compose), and `BRIEFING_ICS_URLS` (optional —
-comma-separated secret Google Calendar "iCal format" URLs; unset → briefing calendar
-section renders unavailable) are also read.
+briefing plugin's news digest; without it those sections render summary-less/omitted)
+and `REDIS_URL` (optional — defaults to `redis://localhost:6379`, set to
+`redis://redis:6379` in docker-compose) are also read. `BRIEFING_ICS_URLS` is still
+parsed by `config.ts` but currently unused (the calendar was removed from the briefing
+view; the `calendar/` modules remain for potential reuse).
 
 `SKIP_AUTH` (`"1"`/`"true"`) is an optional **local-only escape hatch**: when set,
 `createApp` skips the auth middleware entirely (logs a warning) so previews work

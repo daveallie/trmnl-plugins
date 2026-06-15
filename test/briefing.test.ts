@@ -34,8 +34,9 @@ function makeDeps(over: Partial<BriefingDeps> = {}): BriefingDeps {
       },
       async getTopComments() { return []; },
     },
-    calendarClient: { async getIcsTexts() { return []; } },
-    digester: async () => "Tech is busy today. Agents everywhere.",
+    newsClient: { async getHeadlines() { return ["World summit opens", "Markets climb"]; } },
+    newsFeeds: ["https://example.test/abc.rss", "https://example.test/bbc.rss"],
+    digester: async () => "World leaders meet as markets climb. Tech is busy today, agents everywhere.",
     digestCache: (() => {
       const m = new Map<number, string>();
       return { async get(k) { return m.has(k) ? m.get(k)! : null; }, async set(k, v) { m.set(k, v); } };
@@ -54,6 +55,7 @@ test("weatherHighlights projects the fields the briefing needs", () => {
   assert.equal(typeof wx.low, "number");
   assert.equal(typeof wx.rainChance, "number");
   assert.equal(typeof wx.label, "string");
+  assert.equal(typeof wx.rainMm, "number");
   assert.match(wx.sunrise, /am|pm/);
   assert.match(wx.sunset, /am|pm/);
 });
@@ -64,7 +66,6 @@ test("fetchBriefingData populates every section on the happy path", async () => 
   assert.ok(data.tram && data.tram.departures.length > 0 && data.tram.departures.length <= 3);
   assert.ok(data.tram!.departures[0]!.time.match(/am|pm/));
   assert.ok(data.weather && typeof data.weather.temp === "number");
-  assert.ok(data.agenda && Array.isArray(data.agenda.events));
   assert.ok(data.news && data.news.digest.length > 0);
 });
 
@@ -78,14 +79,41 @@ test("a failed section degrades to null while others survive", async () => {
   assert.ok(data.tram);
 });
 
-test("agenda is null when the calendar client throws, [] when it returns no URLs", async () => {
-  const thrown = await fetchBriefingData(
-    makeDeps({ calendarClient: { async getIcsTexts() { throw new Error("boom"); } }, now: () => TRAM_NOW }),
-    TRAM_NOW,
-  );
-  assert.equal(thrown.agenda, null);
-  const empty = await fetchBriefingData(makeDeps({ now: () => TRAM_NOW }), TRAM_NOW);
-  assert.deepEqual(empty.agenda, { events: [] });
+test("news digest blends feed headlines with HN titles", async () => {
+  let captured: string[] = [];
+  const deps = makeDeps({
+    hnClient: {
+      async getTopStories() {
+        return [{ id: 1, title: "AI ships agents", author: "a", points: 10, num_comments: 1, created_at_i: 0 }];
+      },
+      async getTopComments() { return []; },
+    },
+    newsClient: { async getHeadlines() { return ["World summit opens"]; } },
+    digester: async (titles) => { captured = titles; return "blended digest."; },
+    now: () => TRAM_NOW,
+  });
+  const data = await fetchBriefingData(deps, TRAM_NOW);
+  assert.equal(data.news!.digest, "blended digest.");
+  assert.ok(captured.includes("World summit opens"));
+  assert.ok(captured.includes("AI ships agents"));
+});
+
+test("a failing news feed degrades but the digest still builds from other sources", async () => {
+  let captured: string[] = [];
+  const deps = makeDeps({
+    newsClient: { async getHeadlines() { throw new Error("feed down"); } },
+    hnClient: {
+      async getTopStories() {
+        return [{ id: 1, title: "AI ships agents", author: "a", points: 10, num_comments: 1, created_at_i: 0 }];
+      },
+      async getTopComments() { return []; },
+    },
+    digester: async (titles) => { captured = titles; return "tech only."; },
+    now: () => TRAM_NOW,
+  });
+  const data = await fetchBriefingData(deps, TRAM_NOW);
+  assert.equal(data.news!.digest, "tech only.");
+  assert.deepEqual(captured, ["AI ships agents"]);
 });
 
 test("news digest is cached across polls", async () => {
