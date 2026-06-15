@@ -74,6 +74,7 @@
             <span class="value value--small" style="flex:0 0 68px;">{{ d.day }}</span>
             <span class="value value--small" style="flex:0 0 48px; text-align:right;">{{ d.chance }}%</span>
             <span class="label" style="flex:0 0 auto;">rain</span>
+            {% if d.rain > 0 %}<span class="label" style="flex:0 0 auto;">{{ d.rain }}mm</span>{% endif %}
             <span class="value value--small" style="flex:1 1 0; text-align:right; white-space:nowrap;">
               <span style="display:inline-block; width:46px; text-align:right;">{{ d.low }}&deg;</span>
               <span class="label"> / </span>
